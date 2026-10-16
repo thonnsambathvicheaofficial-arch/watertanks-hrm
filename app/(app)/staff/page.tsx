@@ -31,6 +31,7 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
   return (
     <>
       <PageHeader title="Staff" note={`${rows.length} of ${all.length} on record`}>
+        {me.perms.includes('staff.edit') && <Link href="/staff/suggestions" className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Unlisted PINs</Link>}
         {me.perms.includes('staff.edit') && <Link href="/staff/new" className="inline-flex h-9 items-center gap-2 rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep"><Plus size={16} aria-hidden /> Add staff</Link>}
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />

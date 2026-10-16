@@ -12,7 +12,7 @@ const hr = require('@/lib/hr-store')
 export const metadata: Metadata = { title: 'Add staff' }
 export const dynamic = 'force-dynamic'
 
-export default async function NewStaffPage({ searchParams }: { searchParams: { error?: string; v?: string } }) {
+export default async function NewStaffPage({ searchParams }: { searchParams: { error?: string; v?: string; pin?: string; name?: string } }) {
   await guard()
   const ready = await hr.available()
   const [shifts, departments] = await Promise.all([ready ? hr.shifts.list() : [], ready ? hr.departments.list() : []])
@@ -22,7 +22,7 @@ export default async function NewStaffPage({ searchParams }: { searchParams: { e
         <Link href="/staff" className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">All staff</Link>
       </PageHeader>
       <Flash error={searchParams.error} />
-      <StaffForm profile={null} fallback={profileFromEcho(decodeEcho(searchParams.v), null)} shifts={shifts} departments={departments} ready={ready} action={createStaff} />
+      <StaffForm profile={null} fallback={profileFromEcho(decodeEcho(searchParams.v), null) ?? (searchParams.pin ? { pin: searchParams.pin.slice(0, 32), name: (searchParams.name || '').slice(0, 120), group: '', timeIn: '', timeOut: '', offDays: [], aliases: [], departmentId: '', shiftId: '', position: '', phone: '', joiningDate: '', resignedDate: '' } : null)} shifts={shifts} departments={departments} ready={ready} action={createStaff} />
     </>
   )
 }

@@ -56,15 +56,23 @@ Decisions confirmed by Jea: monthly salary with pro-rata deduction; overtime sug
 - Verified live (real database, ZZ accounts and roles only, all removed afterwards): 100+ scripted checks over real HTTP. A view-only account opens exactly its pages and is sent to no-access for the rest; a payroll-only account likewise; an account with no role opens nothing; exports and templates answer 403 (401 when signed out); a role change takes effect; a switched-off account cannot sign in and an existing cookie stops working; you cannot switch off, demote or delete your own account; deleting a role leaves its accounts with no access; the database refuses to edit or delete an audit entry, singly or in bulk; no password or hash ever appears in an entry. In the browser: a forced submit from a view-only account was refused with a message and logged as a denied attempt; roles (template, edit, delete) and accounts (switch off, delete) driven through the forms. One bug found and fixed: the Correct-a-day form was reachable by view-only accounts. View-only accounts now see a notice and switched-off saving forms (courtesy only; the server still refuses).
 - Run migrations/cleanup_test_audit.sql once to remove the test audit entries (names starting ZZ). Entries made by the real account "Test Account" while driving the Roles page (a Viewer role created, edited and deleted) are genuine records and stay.
 
+## Done (phase 6a: legacy parity; no migration needed; uncommitted)
+- Devices: add, edit and remove devices (removal refused while the device has scans stored, so nothing is detached), "Read now" per device with an optional full read (read-only toward the device, same read as the scheduled sync; tried live on K40: worked), a page of scans held aside (kept, never deleted), public host and port shown. Device wipe is deliberately NOT ported.
+- Staff: Change PIN (scans, corrections, rotation, leave, entitlements and pay setup move together; refused when the new PIN already has scans or belongs to someone; the old PIN is kept under Other PINs by default; finalized payslips keep the PIN they were issued under) and Unlisted PINs (active fingerprint IDs not on the staff list, one click to add as staff).
+- Default work hours page (start, end, grace for staff with no shift or own times, with how many people it affects).
+- Reports: Raw scans view (newest 1,000, Excel export has all).
+- All of it audited (device add/edit/remove/read, PIN change, work hours); permissions: devices and work hours need setup.edit, Unlisted PINs staff.edit.
+- Verified live with ZZ records: 28 checks (rename incl. refusals and cascade, device add/edit/read-unreachable/remove-with-scans refused, held list), every table's hash identical afterwards; pages 200; Read now on K40.
+
 ## Still to do on the legacy parity list
-Users admin, staff PIN rename, per-device pull action, raw punches view, corrupted-punch view. (Timesheet and day overrides are now the Roster.)
+None known beyond the cutover checklist below.
 
 ## Next phases (each needs migrations Jea runs)
 2. (done, pending migration) Shifts incl. night and rotating, driver trips across midnight, staff profile fields, departments.
 3. (built, pending migration 002 and live verification) Roster grid with overrides, leave types, entitlements, requests and review queue, holidays.
 4. (built, pending migration 003 and live verification) Payroll: structure, OT tiers (weekday, day off, public holiday), allowances, tax, NSSF, bank and cash lists.
 5. (done, verified live) Roles and permissions, audit trail, batch import.
-6. Parallel run against the live site for a full month, then cutover.
+6. (a: parity done) Parallel run against the live site for a full month, then cutover (Jea's decision and deploy).
 
 ## Cutover checklist
 - Parity list above complete and diffed against the legacy output for a full month.

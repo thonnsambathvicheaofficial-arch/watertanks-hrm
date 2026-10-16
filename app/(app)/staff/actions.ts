@@ -35,3 +35,11 @@ export async function removeAssignment(f: FormData) {
   const pin = String(f.get('pin'))
   await act(`/staff/${encodeURIComponent(pin)}`, async () => { await hr.assignments.remove(String(f.get('id'))); return 'Assignment removed.' })
 }
+
+export async function renamePin(f: FormData) {
+  const pin = String(f.get('pin')), newPin = String(f.get('newPin') || '').trim()
+  await act(`/staff/${encodeURIComponent(pin)}`, async () => {
+    const r = await hr.staff.rename(pin, newPin, { keepOld: f.get('keepOld') === 'on' })
+    return `PIN changed from ${pin} to ${newPin}. ${r.scans} scan${r.scans === 1 ? '' : 's'} moved with it.`
+  }, `/staff/${encodeURIComponent(newPin)}`, f)
+}

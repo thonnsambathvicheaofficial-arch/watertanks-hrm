@@ -28,6 +28,7 @@ const PAY: Item[] = [
 const SETUP: Item[] = [
   { href: '/settings/shifts', label: 'Shifts', icon: Clock, perm: 'setup.view' },
   { href: '/settings/departments', label: 'Departments', icon: Building2, perm: 'setup.view' },
+  { href: '/settings/work-hours', label: 'Default hours', icon: Clock, perm: 'setup.view' },
   { href: '/holidays', label: 'Holidays', icon: PartyPopper, perm: 'setup.view' },
   { href: '/settings/leave-types', label: 'Leave types', icon: CalendarOff, perm: 'setup.view' },
   { href: '/settings/entitlements', label: 'Entitlements', icon: Scale, perm: 'setup.view' },

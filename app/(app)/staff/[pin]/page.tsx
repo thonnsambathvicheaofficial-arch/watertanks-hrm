@@ -7,7 +7,7 @@ import { decodeEcho, echoOne } from '@/lib/echo'
 import { to12h } from '@/lib/utils'
 import { profileFromEcho } from '../profileEcho'
 import { StaffForm } from '../StaffForm'
-import { addAssignment, removeAssignment, updateStaff } from '../actions'
+import { addAssignment, removeAssignment, renamePin, updateStaff } from '../actions'
 import { guard } from '@/lib/guard'
 import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -83,6 +83,19 @@ export default async function StaffMemberPage({ params, searchParams }: { params
           </form>
         </section>
       )}
+
+      <section className="mt-12 max-w-[820px] border-t border-line pt-6" aria-labelledby="pin-h">
+        <h2 id="pin-h" className="text-[15px] font-semibold">Change PIN</h2>
+        <p className="mb-4 mt-1 max-w-[62ch] text-[14px] text-ink-soft">
+          For a PIN that was typed wrongly. Scans, corrections, rotation, leave and payroll setup move to the new PIN together. The fingerprint device itself is not changed, so it may keep scanning this person under the old PIN. Keeping the old PIN listed under Other PINs makes those scans still count.
+        </p>
+        <form action={renamePin} className="grid items-end gap-4 sm:grid-cols-[minmax(0,220px)_1fr_auto]">
+          <input type="hidden" name="pin" value={pin} />
+          <Field label="New PIN"><Input name="newPin" defaultValue={ev('newPin')} autoComplete="off" required /></Field>
+          <label className="flex cursor-pointer items-center gap-2 pb-2 text-[14px]"><input type="checkbox" name="keepOld" defaultChecked className="h-4 w-4 accent-[oklch(0.46_0.15_258)]" />Keep {pin} under Other PINs</label>
+          <Button type="submit">Change PIN</Button>
+        </form>
+      </section>
     </>
   )
 }
