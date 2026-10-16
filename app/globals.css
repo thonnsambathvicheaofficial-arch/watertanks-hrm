@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Song Fa HR: design tokens (see DESIGN.md).
+  Colours are OKLCH channels so Tailwind can add alpha: oklch(var(--ink) / 0.5).
+*/
+@layer base {
+  :root {
+    --paper: 0.982 0.005 85;
+    --raised: 1 0 0;
+    --ink: 0.235 0.03 255;
+    --ink-soft: 0.43 0.025 255;
+    --ink-faint: 0.58 0.02 255;
+    --line: 0.915 0.008 250;
+    --line-strong: 0.84 0.012 250;
+
+    --brand: 0.46 0.15 258;
+    --brand-deep: 0.37 0.13 258;
+    --brand-wash: 0.955 0.025 258;
+    --ruby: 0.47 0.17 20;
+
+    --steel: 0.235 0.035 255;
+    --steel-raised: 0.29 0.04 255;
+    --steel-line: 0.33 0.04 255;
+    --steel-text: 0.94 0.01 250;
+    --steel-soft: 0.74 0.025 255;
+
+    --present: 0.46 0.12 155;
+    --present-wash: 0.95 0.04 155;
+    --late: 0.5 0.12 65;
+    --late-wash: 0.955 0.055 85;
+    --absent: 0.5 0.19 27;
+    --absent-wash: 0.955 0.03 27;
+    --leave: 0.46 0.15 300;
+    --leave-wash: 0.955 0.03 300;
+    --excused: 0.46 0.09 205;
+    --excused-wash: 0.955 0.03 205;
+    --holiday: 0.47 0.13 340;
+    --holiday-wash: 0.955 0.03 340;
+    --dayoff: 0.5 0.015 255;
+    --dayoff-wash: 0.945 0.006 255;
+  }
+
+  html { color-scheme: light; }
+
+  body {
+    @apply bg-paper font-sans text-[14px] leading-[1.5] text-ink antialiased;
+    font-feature-settings: 'tnum' 1, 'cv11' 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection { background: oklch(var(--brand) / 0.22); color: oklch(var(--ink)); }
+  :focus-visible { outline: 2px solid oklch(var(--brand)); outline-offset: 2px; border-radius: 3px; }
+  input, select, textarea, button { font: inherit; }
+  input::placeholder { color: oklch(var(--ink-faint)); }
+  a { text-underline-offset: 3px; text-decoration-thickness: 1px; }
+
+  * { scrollbar-width: thin; scrollbar-color: oklch(var(--line-strong)) transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb { background: oklch(var(--line-strong)); border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
+  *::-webkit-scrollbar-track { background: transparent; }
+}
+
+@layer components {
+  /* Numerals line up in every table column. */
+  .num { font-variant-numeric: tabular-nums; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

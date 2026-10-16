@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 // handler instead of crashing the process / hanging the request.
 const h = fn => (req, res, next) => fn(req, res, next).catch(next)
 
-app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')))
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'legacy-public', 'login.html')))
 app.post('/api/login', h(async (req, res) => {
   const { username, password } = req.body || {}
   const user = await auth.check(username, password)
@@ -432,7 +432,7 @@ app.use((err, req, res, next) => {
 })
 
 // ── static UI ───────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(path.join(__dirname, 'legacy-public')))
 
 if (require.main === module) {
   app.listen(PORT, () => {
