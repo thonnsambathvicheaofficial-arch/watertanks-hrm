@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { Button, EmptyState, Flash, Input, MigrationNotice, PageHeader } from '@/components/ui'
 import { fillDefaults, saveEntitlements } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const lv = require('@/lib/leave-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -17,6 +19,7 @@ type P = { pin: string; name: string; resignedDate: string }
 type Req = { pin: string; typeId: string; days: number; status: string }
 
 export default async function EntitlementsPage({ searchParams }: { searchParams: { year?: string; q?: string; error?: string; saved?: string } }) {
+  const me = await guard()
   if (!(await lv.ready())) return <><PageHeader title="Entitlements" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const year = Number(searchParams.year) || new Date().getFullYear()
   const q = (searchParams.q || '').trim().toLowerCase()
@@ -36,6 +39,7 @@ export default async function EntitlementsPage({ searchParams }: { searchParams:
         </div>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('setup.edit') && <ReadOnlyNotice />}
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <form method="get" className="flex items-end gap-3"><input type="hidden" name="year" value={year} /><div className="w-[260px]"><Input name="q" defaultValue={searchParams.q} placeholder="Search name or PIN" aria-label="Search staff" /></div><Button type="submit">Search</Button></form>

@@ -3,35 +3,46 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Activity, Building2, CalendarDays, CalendarOff, Clock, Fingerprint, LogOut, Menu, PartyPopper, Repeat, Scale, Settings2, Table2, Timer, Users, Wallet, X, ClipboardList, Landmark } from 'lucide-react'
+import { Activity, Building2, CalendarDays, CalendarOff, ClipboardList, Clock, FileClock, Fingerprint, KeyRound, Landmark, LogOut, Menu, PartyPopper, Repeat, Scale, Settings2, ShieldCheck, Table2, Timer, Upload, Users, Wallet, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from './Logo'
 
-const NAV = [
-  { href: '/', label: 'Live', icon: Activity },
-  { href: '/reports', label: 'Reports', icon: Table2 },
-  { href: '/roster', label: 'Roster', icon: CalendarDays },
-  { href: '/leave', label: 'Leave', icon: CalendarOff },
-  { href: '/staff', label: 'Staff', icon: Users },
-  { href: '/rotation', label: 'Rotation', icon: Repeat },
-]
-const PAY = [
-  { href: '/payroll', label: 'Payroll', icon: Wallet },
-  { href: '/payroll/overtime', label: 'Overtime', icon: Timer },
-  { href: '/payroll/items', label: 'Monthly items', icon: ClipboardList },
-  { href: '/payroll/setup', label: 'Pay setup', icon: Landmark },
-]
-const SETUP = [
-  { href: '/settings/shifts', label: 'Shifts', icon: Clock },
-  { href: '/settings/departments', label: 'Departments', icon: Building2 },
-  { href: '/holidays', label: 'Holidays', icon: PartyPopper },
-  { href: '/settings/leave-types', label: 'Leave types', icon: CalendarOff },
-  { href: '/settings/entitlements', label: 'Entitlements', icon: Scale },
-  { href: '/settings/payroll', label: 'Payroll settings', icon: Settings2 },
-  { href: '/devices', label: 'Devices', icon: Fingerprint },
-]
+type Item = { href: string; label: string; icon: React.ElementType; perm: string }
 
-export function Sidebar({ username }: { username: string }) {
+// Each link shows only if the signed-in account has the permission its page needs
+// (the same table the pages themselves enforce, lib/permissions.js).
+const NAV: Item[] = [
+  { href: '/', label: 'Live', icon: Activity, perm: 'attendance.view' },
+  { href: '/reports', label: 'Reports', icon: Table2, perm: 'attendance.view' },
+  { href: '/roster', label: 'Roster', icon: CalendarDays, perm: 'attendance.view' },
+  { href: '/leave', label: 'Leave', icon: CalendarOff, perm: 'leave.view' },
+  { href: '/staff', label: 'Staff', icon: Users, perm: 'staff.view' },
+  { href: '/rotation', label: 'Rotation', icon: Repeat, perm: 'staff.view' },
+]
+const PAY: Item[] = [
+  { href: '/payroll', label: 'Payroll', icon: Wallet, perm: 'payroll.view' },
+  { href: '/payroll/overtime', label: 'Overtime', icon: Timer, perm: 'payroll.view' },
+  { href: '/payroll/items', label: 'Monthly items', icon: ClipboardList, perm: 'payroll.view' },
+  { href: '/payroll/setup', label: 'Pay setup', icon: Landmark, perm: 'payroll.view' },
+]
+const SETUP: Item[] = [
+  { href: '/settings/shifts', label: 'Shifts', icon: Clock, perm: 'setup.view' },
+  { href: '/settings/departments', label: 'Departments', icon: Building2, perm: 'setup.view' },
+  { href: '/holidays', label: 'Holidays', icon: PartyPopper, perm: 'setup.view' },
+  { href: '/settings/leave-types', label: 'Leave types', icon: CalendarOff, perm: 'setup.view' },
+  { href: '/settings/entitlements', label: 'Entitlements', icon: Scale, perm: 'setup.view' },
+  { href: '/settings/payroll', label: 'Payroll settings', icon: Settings2, perm: 'payroll.view' },
+  { href: '/devices', label: 'Devices', icon: Fingerprint, perm: 'attendance.view' },
+]
+const ADMIN: Item[] = [
+  { href: '/import', label: 'Import', icon: Upload, perm: 'import.run' },
+  { href: '/settings/audit', label: 'Audit log', icon: FileClock, perm: 'audit.view' },
+  { href: '/settings/users', label: 'Accounts', icon: KeyRound, perm: 'users.manage' },
+  { href: '/settings/roles', label: 'Roles', icon: ShieldCheck, perm: 'users.manage' },
+]
+const SECTIONS: [string, Item[]][] = [['', NAV], ['Payroll', PAY], ['Setup', SETUP], ['Administration', ADMIN]]
+
+export function Sidebar({ username, perms, roleLabel }: { username: string; perms: string[]; roleLabel: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -43,7 +54,7 @@ export function Sidebar({ username }: { username: string }) {
     router.replace('/login'); router.refresh()
   }
 
-  const link = ({ href, label, icon: Icon }: (typeof NAV)[number]) => (
+  const link = ({ href, label, icon: Icon }: Item) => (
     <li key={href}>
       <Link
         href={href}
@@ -62,18 +73,26 @@ export function Sidebar({ username }: { username: string }) {
 
   const nav = (
     <nav aria-label="Main" className="flex-1 overflow-y-auto px-3 py-2">
-      <ul className="space-y-0.5">{NAV.map(link)}</ul>
-      <p className="mb-1 mt-6 px-3 text-[12px] text-steel-soft">Payroll</p>
-      <ul className="space-y-0.5">{PAY.map(link)}</ul>
-      <p className="mb-1 mt-6 px-3 text-[12px] text-steel-soft">Setup</p>
-      <ul className="space-y-0.5">{SETUP.map(link)}</ul>
+      {SECTIONS.map(([title, items], i) => {
+        const shown = items.filter(it => perms.includes(it.perm))
+        if (!shown.length) return null
+        return (
+          <div key={title || 'main'}>
+            {title && <p className={cn('mb-1 px-3 text-[12px] text-steel-soft', i > 0 && 'mt-6')}>{title}</p>}
+            <ul className="space-y-0.5">{shown.map(link)}</ul>
+          </div>
+        )
+      })}
     </nav>
   )
 
   const footer = (
     <div className="border-t border-steel-line p-3">
       <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-        <span className="truncate text-[13px] text-steel-text" title={username}>{username}</span>
+        <span className="min-w-0">
+          <span className="block truncate text-[13px] text-steel-text" title={username}>{username}</span>
+          <span className="block truncate text-[12px] text-steel-soft">{roleLabel}</span>
+        </span>
         <button onClick={signOut} className="rounded p-1.5 text-steel-soft transition-colors hover:bg-steel-raised hover:text-white" aria-label="Sign out">
           <LogOut size={17} strokeWidth={1.75} />
         </button>

@@ -4,6 +4,8 @@ import { Plus } from 'lucide-react'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { EmptyState, Flash, MigrationNotice, PageHeader } from '@/components/ui'
 import { DAY_NAMES, to12h } from '@/lib/utils'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 
@@ -13,6 +15,7 @@ export const dynamic = 'force-dynamic'
 type Shift = { id: string; name: string; start: string; end: string; graceMinutes: number | null; offDays: number[]; overnight: boolean; staff: number }
 
 export default async function ShiftsPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
+  const me = await guard()
   const ready = await hr.available()
   const shifts: Shift[] = ready ? await hr.shifts.list() : []
   return (
@@ -21,6 +24,7 @@ export default async function ShiftsPage({ searchParams }: { searchParams: { err
         {ready && <Link href="/settings/shifts/new" className="inline-flex h-9 items-center gap-2 rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep"><Plus size={16} aria-hidden /> New shift</Link>}
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('setup.edit') && <ReadOnlyNotice />}
       {!ready ? <MigrationNotice /> : (
         <TableWrap>
           <Table>

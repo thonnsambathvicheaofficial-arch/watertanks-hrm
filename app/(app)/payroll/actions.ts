@@ -18,7 +18,7 @@ export async function generateRun(f: FormData) {
 }
 
 export async function finalizeRun(f: FormData) {
-  await act(here(f), async (s) => { await pr.runs.finalize(Number(f.get('year')), Number(f.get('month')), s.username); return 'Payroll finalized. These figures are now locked.' })
+  await act(here(f), async (s) => { await pr.runs.finalize(Number(f.get('year')), Number(f.get('month')), s.username); return 'Payroll finalized. These figures are now locked.' }, undefined, undefined, 'payroll.finalize')
 }
 
 export async function discardRun(f: FormData) {

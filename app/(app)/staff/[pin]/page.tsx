@@ -8,6 +8,8 @@ import { to12h } from '@/lib/utils'
 import { profileFromEcho } from '../profileEcho'
 import { StaffForm } from '../StaffForm'
 import { addAssignment, removeAssignment, updateStaff } from '../actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 
@@ -18,6 +20,7 @@ type Shift = { id: string; name: string; start: string; end: string }
 type Asg = { id: string; shiftName: string; start: string; end: string; from: string; to: string | null; note: string }
 
 export default async function StaffMemberPage({ params, searchParams }: { params: { pin: string }; searchParams: { error?: string; saved?: string; v?: string } }) {
+  const me = await guard()
   const pin = decodeURIComponent(params.pin)
   const ready = await hr.available()
   const [profile, shifts, departments, assignments] = await Promise.all([
@@ -37,6 +40,7 @@ export default async function StaffMemberPage({ params, searchParams }: { params
         <Link href="/staff" className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">All staff</Link>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('staff.edit') && <ReadOnlyNotice />}
       <StaffForm profile={profile} fallback={fallback} shifts={shifts as Shift[]} departments={departments} ready={ready} action={updateStaff} />
 
       {ready && (

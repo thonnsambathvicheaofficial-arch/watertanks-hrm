@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { EmptyState, PageHeader } from '@/components/ui'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const store = require('@/lib/store')
 
@@ -19,6 +20,7 @@ const ago = (iso: string | null) => {
 }
 
 export default async function DevicesPage() {
+  await guard()
   const [devices, counts, corrupted] = await Promise.all([store.devices.list(), store.punches.countsByDevice(), store.punches.corruptedCountsByDevice()])
   return (
     <>

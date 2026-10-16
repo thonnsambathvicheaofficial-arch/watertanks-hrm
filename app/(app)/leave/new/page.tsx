@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Button, Field, Flash, Input, MigrationNotice, PageHeader, Select } from '@/components/ui'
 import { decodeEcho, echoOne } from '@/lib/echo'
 import { createLeave } from '../actions'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const lv = require('@/lib/leave-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -12,6 +13,7 @@ export const metadata: Metadata = { title: 'Record leave' }
 export const dynamic = 'force-dynamic'
 
 export default async function NewLeavePage({ searchParams }: { searchParams: { error?: string; v?: string; pin?: string } }) {
+  await guard()
   if (!(await lv.ready())) return <><PageHeader title="Record leave" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const [types, staff] = await Promise.all([lv.types.list({ activeOnly: true }), hr.staff.list()])
   const people = (staff as { pin: string; name: string; resignedDate: string }[]).filter(s => !s.resignedDate).sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))

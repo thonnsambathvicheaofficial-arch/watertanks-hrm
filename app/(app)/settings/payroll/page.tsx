@@ -5,6 +5,8 @@ import { Button, Field, Flash, Input, MigrationNotice, PageHeader, Select } from
 import { decodeEcho, echoAll, echoOne } from '@/lib/echo'
 import { cn } from '@/lib/utils'
 import { deleteAllowance, fillFromHrm, saveAllowance, saveBrackets, saveSettings } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pr = require('@/lib/payroll-store')
 
@@ -16,6 +18,7 @@ type A = { id: string; name: string; kind: string; amount: number; isActive: boo
 const check = 'h-4 w-4 accent-[oklch(0.46_0.15_258)]'
 
 export default async function PayrollSettingsPage({ searchParams }: { searchParams: { error?: string; saved?: string; v?: string } }) {
+  const me = await guard()
   if (!(await pr.ready())) return <><PageHeader title="Payroll settings" /><MigrationNotice file="003_payroll.sql" /></>
   const [s, allowances]: [S & { brackets: { min_amount: number; max_amount: number | null; rate: number; quick_deduction: number }[] }, A[]] = await Promise.all([pr.settings.get(), pr.allowances.list()])
   const items: { label: string; done: boolean }[] = pr.readiness(s)
@@ -32,6 +35,7 @@ export default async function PayrollSettingsPage({ searchParams }: { searchPara
     <>
       <PageHeader title="Payroll settings" note="Nothing here is assumed. A payroll month can be generated at any time, but it can only be finalized once the items below are filled in." />
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('payroll.edit') && <ReadOnlyNotice />}
 
       <section aria-labelledby="ready-h" className="mb-8 max-w-[760px] rounded-md border border-line bg-raised p-5">
         <h2 id="ready-h" className="text-[15px] font-semibold">{missing ? `${missing} of ${items.length} still to fill in` : 'Everything payroll needs is set'}</h2>

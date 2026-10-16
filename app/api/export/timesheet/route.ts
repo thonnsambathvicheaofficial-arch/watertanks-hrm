@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { denyUnless } from '@/lib/api-access'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { buildTimesheetExport } = require('@/lib/exports')
 
@@ -6,6 +7,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
+  const denied = await denyUnless(req, 'attendance.view')
+  if (denied) return denied
   const query = Object.fromEntries(new URL(req.url).searchParams)
   const { filename, buffer } = await buildTimesheetExport(query)
   return new NextResponse(buffer, {

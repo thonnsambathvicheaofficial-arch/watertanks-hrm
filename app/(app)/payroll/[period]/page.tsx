@@ -9,6 +9,8 @@ import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { Button, EmptyState, Flash, MigrationNotice, PageHeader } from '@/components/ui'
 import { MONTH_NAMES, usd } from '@/lib/utils'
 import { discardRun, finalizeRun, generateRun } from '../actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pr = require('@/lib/payroll-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -23,6 +25,7 @@ const shift = (y: number, m: number, n: number) => { const d = new Date(y, m - 1
 const total = (s: Slip[], f: (x: Slip) => number) => Math.round(s.reduce((a, x) => a + f(x), 0) * 100) / 100
 
 export default async function PayrollMonthPage({ params, searchParams }: { params: { period: string }; searchParams: { error?: string; saved?: string } }) {
+  const me = await guard()
   const m = /^(\d{4})-(\d{2})$/.exec(params.period)
   if (!m) notFound()
   const year = Number(m[1]), month = Number(m[2])
@@ -45,6 +48,7 @@ export default async function PayrollMonthPage({ params, searchParams }: { param
         <MonthNav label={`${MONTH_NAMES[month - 1]} ${year}`} prev={`/payroll/${shift(year, month, -1)}`} next={`/payroll/${shift(year, month, 1)}`} />
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('payroll.edit') && <ReadOnlyNotice />}
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         {!finalized && <form action={generateRun}>{hidden}<SubmitButton variant={run ? 'quiet' : 'primary'} pendingLabel="Building payroll">{run ? 'Generate again' : 'Generate payroll'}</SubmitButton></form>}

@@ -3,6 +3,8 @@ import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { ConfirmButton } from '@/components/ConfirmButton'
 import { Button, EmptyState, Flash, Input, MigrationNotice, PageHeader } from '@/components/ui'
 import { createDepartment, deleteDepartment, renameDepartment } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 
@@ -12,12 +14,14 @@ export const dynamic = 'force-dynamic'
 type Dept = { id: string; name: string; staff: number }
 
 export default async function DepartmentsPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
+  const me = await guard()
   const ready = await hr.available()
   const depts: Dept[] = ready ? await hr.departments.list() : []
   return (
     <>
       <PageHeader title="Departments" note="Group staff by where they work, for example Assembly, Welding, Packing or Office." />
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('setup.edit') && <ReadOnlyNotice />}
       {!ready ? <MigrationNotice /> : (
         <>
           <form key={`add-${depts.length}-${searchParams.saved ?? ''}`} action={createDepartment} className="mb-5 flex max-w-[460px] items-end gap-3">

@@ -7,6 +7,8 @@ import { Button, EmptyState, Field, Flash, Input, MigrationNotice, PageHeader } 
 import { decodeEcho, echoOne } from '@/lib/echo'
 import { dayName } from '@/lib/utils'
 import { addHoliday, removeHoliday } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const lv = require('@/lib/leave-store')
 
@@ -16,6 +18,7 @@ export const dynamic = 'force-dynamic'
 type H = { date: string; name: string; nameKh: string }
 
 export default async function HolidaysPage({ searchParams }: { searchParams: { year?: string; error?: string; saved?: string; v?: string } }) {
+  const me = await guard()
   if (!(await lv.ready())) return <><PageHeader title="Holidays" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const year = Number(searchParams.year) || new Date().getFullYear()
   const list: H[] = await lv.holidays.list(year)
@@ -30,6 +33,7 @@ export default async function HolidaysPage({ searchParams }: { searchParams: { y
         </div>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('setup.edit') && <ReadOnlyNotice />}
 
       <form action={addHoliday} className="mb-6 grid max-w-[760px] items-end gap-3 sm:grid-cols-[160px_minmax(160px,1fr)_minmax(160px,1fr)_auto]">
         <Field label="Date"><Input type="date" name="date" defaultValue={echoOne(echo, 'date') ?? `${year}-01-01`} required /></Field>

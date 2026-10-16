@@ -6,6 +6,8 @@ import { Button, EmptyState, Field, Flash, Input, MigrationNotice, PageHeader, S
 import { decodeEcho, echoOne } from '@/lib/echo'
 import { MONTH_NAMES, usd } from '@/lib/utils'
 import { addItem, removeItem } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pr = require('@/lib/payroll-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -20,6 +22,7 @@ type P = { pin: string; name: string; resignedDate: string }
 const shift = (y: number, m: number, n: number) => { const d = new Date(y, m - 1 + n, 1); return { y: d.getFullYear(), m: d.getMonth() + 1 } }
 
 export default async function ItemsPage({ searchParams }: { searchParams: { year?: string; month?: string; error?: string; saved?: string; v?: string } }) {
+  const me = await guard()
   if (!(await pr.ready())) return <><PageHeader title="Monthly items" /><MigrationNotice file="003_payroll.sql" /></>
   const now = new Date()
   const year = Number(searchParams.year) || now.getFullYear(), month = Number(searchParams.month) || now.getMonth() + 1
@@ -38,6 +41,7 @@ export default async function ItemsPage({ searchParams }: { searchParams: { year
         <MonthNav label={`${MONTH_NAMES[month - 1]} ${year}`} prev={`/payroll/items?year=${prev.y}&month=${prev.m}`} next={`/payroll/items?year=${next.y}&month=${next.m}`} />
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('payroll.edit') && <ReadOnlyNotice />}
       {locked && <p className="mb-5 rounded border border-line bg-raised px-3.5 py-2.5 text-[14px] text-ink-soft">Payroll for this month is finalized, so items cannot be added or removed. Record a correction as an adjustment next month.</p>}
 
       {!locked && (

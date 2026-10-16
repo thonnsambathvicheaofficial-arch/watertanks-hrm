@@ -7,6 +7,7 @@ import { Button, EmptyState, Field, Flash, Input, PageHeader, Select, StatusBadg
 import { decodeEcho, echoOne } from '@/lib/echo'
 import { dayName, to12h } from '@/lib/utils'
 import { removeOverride, saveOverride } from './actions'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { reportData } = require('@/lib/report-data')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -26,6 +27,7 @@ const STATUS_OPTIONS = [
 ]
 
 export default async function DayPage({ searchParams }: { searchParams: { pin?: string; date?: string; month?: string; error?: string; saved?: string; v?: string } }) {
+  await guard()
   const pin = searchParams.pin || '', date = searchParams.date || ''
   if (!pin || !/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound()
   const month = searchParams.month || date.slice(0, 7)

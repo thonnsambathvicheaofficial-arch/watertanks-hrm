@@ -3,6 +3,7 @@ import { Download } from 'lucide-react'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { Button, EmptyState, Field, Input, PageHeader, StatusBadge } from '@/components/ui'
 import { dayName, to12h } from '@/lib/utils'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { reportData, todayStr, monthStartStr } = require('@/lib/report-data')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -20,6 +21,7 @@ type Summary = { pin: string; name: string; group: string | null; days: number; 
 const select = 'h-9 w-full rounded border border-line-strong bg-raised px-3 text-[14px] text-ink hover:border-ink-faint focus-visible:border-brand'
 
 export default async function ReportsPage({ searchParams }: { searchParams: SP }) {
+  await guard()
   const from = searchParams.from || monthStartStr()
   const to = searchParams.to || todayStr()
   const view = searchParams.view === 'summary' ? 'summary' : 'daily'

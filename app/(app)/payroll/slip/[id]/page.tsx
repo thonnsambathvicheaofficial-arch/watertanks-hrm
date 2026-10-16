@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { Logo } from '@/components/Logo'
 import { PrintButton } from '@/components/PrintButton'
 import { MONTH_NAMES, usd } from '@/lib/utils'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pr = require('@/lib/payroll-store')
 
@@ -28,6 +29,7 @@ function Line({ label, value, strong, sub }: { label: string; value: string; str
 }
 
 export default async function SlipPage({ params }: { params: { id: string } }) {
+  await guard()
   if (!(await pr.ready())) notFound()
   const s = await pr.runs.slip(params.id)
   if (!s) notFound()

@@ -3,6 +3,8 @@ import { ConfirmButton } from '@/components/ConfirmButton'
 import { Button, EmptyState, Flash, Input, MigrationNotice, PageHeader } from '@/components/ui'
 import { decodeEcho, echoOne } from '@/lib/echo'
 import { addLeaveType, deleteLeaveType, updateLeaveType } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const lv = require('@/lib/leave-store')
 
@@ -16,6 +18,7 @@ const check = 'h-4 w-4 accent-[oklch(0.46_0.15_258)]'
 const cols = 'grid grid-cols-[84px_minmax(180px,1fr)_72px_150px_80px_72px_88px] items-center gap-3 px-3'
 
 export default async function LeaveTypesPage({ searchParams }: { searchParams: { error?: string; saved?: string; v?: string } }) {
+  const me = await guard()
   const ready = await lv.ready()
   const types: T[] = ready ? await lv.types.list() : []
   const echo = decodeEcho(searchParams.v)
@@ -23,6 +26,7 @@ export default async function LeaveTypesPage({ searchParams }: { searchParams: {
     <>
       <PageHeader title="Leave types" note="The kinds of leave HR can record. Default days is the yearly allowance used by Fill from defaults on the Entitlements page. Leave it empty if a type has no fixed allowance." />
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('setup.edit') && <ReadOnlyNotice />}
       {!ready ? <MigrationNotice file="002_leave_holidays_roster.sql" /> : (
         <>
           <div className="mb-8 overflow-x-auto rounded-md border border-line bg-raised">

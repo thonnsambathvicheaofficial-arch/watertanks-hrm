@@ -5,9 +5,17 @@ import { SESSION_COOKIE, verifySession, type Session } from '@/lib/session'
 import { encodeEcho } from '@/lib/echo'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { UserError } = require('@/lib/hr-store')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const users = require('@/lib/users')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const audit = require('@/lib/audit')
+// Installs the audit-log entries on every store function that changes data.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('@/lib/audit-hooks')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const P = require('@/lib/permissions')
 
-// Every server action starts here: the middleware already guards the route, this
-// re-checks the session so an action can never run unauthenticated.
+// The signed-in person, or a redirect to sign in.
 export async function requireSession() {
   const s = await verifySession(cookies().get(SESSION_COOKIE)?.value)
   if (!s) redirect('/login')
@@ -16,17 +24,39 @@ export async function requireSession() {
 
 const withParam = (path: string, key: string, value: string) => `${path}${path.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}`
 
+// "/settings/payroll" -> "payroll", "/payroll/2026-08" -> "payroll": the area an action belongs to, for the audit log.
+const areaOf = (path: string) => path.split('?')[0].split('/').filter(Boolean).filter(s => s !== 'settings')[0] || 'home'
+
 /**
- * Run a mutation, then land back on `back` with either a "saved" or an "error"
- * flash. Only UserError messages (written to be read by a person) reach the
- * screen; anything unexpected is rethrown to the error boundary.
+ * Run a mutation, then land back on `back` with either a "saved" or an "error" flash.
+ *
+ * Every action goes through here, so this is where it is checked and logged:
+ *  - the person must be signed in, their account must still exist, and their role must grant
+ *    the permission (`perm`, or the default for the page the form lives on; unknown pages
+ *    need an administrator);
+ *  - a successful action is written to the audit log (unless the code already recorded a
+ *    more detailed entry itself).
+ * Only UserError messages (written to be read by a person) reach the screen; anything
+ * unexpected is rethrown to the error boundary.
  */
-export async function act(back: string, fn: (session: Session) => Promise<string | void>, okPath?: string, form?: FormData): Promise<never> {
+export async function act(back: string, fn: (session: Session) => Promise<string | void>, okPath?: string, form?: FormData, perm?: string): Promise<never> {
   const session = await requireSession()
+  const access = await users.access(session.username)
+  if (!access) redirect('/login')
+  const need = perm ?? P.editPermFor(back)
+  if (!access.perms.includes(need)) {
+    await audit.record({ actor: session.username, action: 'permission.denied', entity: areaOf(back), summary: `Tried to change something on ${back.split('?')[0]} without permission (${need})` })
+    redirect(withParam(back, 'error', 'You do not have permission to do that.'))
+  }
+
+  const ctx = { actor: session.username, recorded: false }
   let error = '', ok = ''
-  try { ok = (await fn(session)) || '' } catch (e) {
+  try { ok = (await audit.runWith(ctx, () => fn(session))) || '' } catch (e) {
     if (e instanceof UserError) error = (e as Error).message
     else throw e
+  }
+  if (!error && !ctx.recorded) {
+    await audit.record({ actor: session.username, action: 'action', entity: areaOf(back), summary: ok || 'Saved', details: { page: back.split('?')[0] } })
   }
   revalidatePath('/', 'layout')
   if (error) redirect(form ? withParam(withParam(back, 'error', error), 'v', encodeEcho(form)) : withParam(back, 'error', error))

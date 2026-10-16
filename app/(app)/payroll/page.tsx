@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { Button, EmptyState, Field, Flash, Input, MigrationNotice, PageHeader } from '@/components/ui'
 import { MONTH_NAMES } from '@/lib/utils'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pr = require('@/lib/payroll-store')
 
@@ -13,6 +14,7 @@ type R = { id: string; year: number; month: number; status: string; createdBy: s
 const pad = (n: number) => String(n).padStart(2, '0')
 
 export default async function PayrollPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
+  await guard()
   if (!(await pr.ready())) return <><PageHeader title="Payroll" /><MigrationNotice file="003_payroll.sql" /></>
   const [runs, s]: [R[], { exchangeRate: number | null }] = await Promise.all([pr.runs.list(), pr.settings.get()])
   const items: { label: string; done: boolean }[] = pr.readiness(s)

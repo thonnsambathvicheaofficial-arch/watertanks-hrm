@@ -5,6 +5,8 @@ import { Button, EmptyState, Field, Flash, Input, MigrationNotice, PageHeader, S
 import { decodeEcho, echoAll, echoOne } from '@/lib/echo'
 import { to12h } from '@/lib/utils'
 import { assignRotation, removeRotation } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -19,6 +21,7 @@ type P = { pin: string; name: string; group: string; departmentId: string; shift
 type Asg = { id: string; pin: string; shiftName: string; start: string; end: string; from: string; to: string | null; note: string }
 
 export default async function RotationPage({ searchParams }: { searchParams: { department?: string; group?: string; error?: string; saved?: string; v?: string } }) {
+  const me = await guard()
   const ready = await hr.available()
   if (!ready) return <><PageHeader title="Rotation" /><MigrationNotice /></>
 
@@ -38,6 +41,7 @@ export default async function RotationPage({ searchParams }: { searchParams: { d
     <>
       <PageHeader title="Rotation" note="Move a team onto another shift for a set period, such as a week of nights. Attendance follows the assigned shift on those dates." />
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('staff.edit') && <ReadOnlyNotice />}
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3" aria-label="Choose who to show">
         <div className="w-[200px]"><Field label="Department"><Select name="department" defaultValue={dept}><option value="">All departments</option>{depts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field></div>

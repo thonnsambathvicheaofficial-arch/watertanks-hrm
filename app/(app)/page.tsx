@@ -3,6 +3,7 @@ import { AutoRefresh } from '@/components/AutoRefresh'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { EmptyState, PageHeader } from '@/components/ui'
 import { dayName, to12h } from '@/lib/utils'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { reportData, todayStr } = require('@/lib/report-data')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -17,6 +18,7 @@ type Daily = { pin: string; name: string; group: string | null; status: string; 
 type Punch = { id: string; pin: string; time: string; deviceId: string }
 
 export default async function LivePage() {
+  await guard()
   const today = todayStr()
   const [{ daily, punches, employees }, devices] = await Promise.all([reportData({ from: today, to: today }), store.devices.list()])
   const deviceName: Record<string, string> = Object.fromEntries(devices.map((d: { id: string; name: string }) => [d.id, d.name]))

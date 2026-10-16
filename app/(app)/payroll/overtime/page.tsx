@@ -7,6 +7,8 @@ import { MONTH_NAMES, dayName } from '@/lib/utils'
 import { ConfirmButton } from '@/components/ConfirmButton'
 import { SubmitButton } from '@/components/SubmitButton'
 import { addOvertime, decideAllOvertime, decideOvertime, suggestOvertime } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pr = require('@/lib/payroll-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -25,6 +27,7 @@ const TIER: Record<string, string> = { normal: 'Normal day', off: 'Day off', hol
 const shift = (y: number, m: number, n: number) => { const d = new Date(y, m - 1 + n, 1); return { y: d.getFullYear(), m: d.getMonth() + 1 } }
 
 export default async function OvertimePage({ searchParams }: { searchParams: { year?: string; month?: string; status?: string; error?: string; saved?: string; v?: string } }) {
+  const me = await guard()
   if (!(await pr.ready())) return <><PageHeader title="Overtime" /><MigrationNotice file="003_payroll.sql" /></>
   const now = new Date()
   const year = Number(searchParams.year) || now.getFullYear(), month = Number(searchParams.month) || now.getMonth() + 1
@@ -49,6 +52,7 @@ export default async function OvertimePage({ searchParams }: { searchParams: { y
         <MonthNav label={`${MONTH_NAMES[month - 1]} ${year}`} prev={`/payroll/overtime?year=${prev.y}&month=${prev.m}`} next={`/payroll/overtime?year=${next.y}&month=${next.m}`} />
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('payroll.edit') && <ReadOnlyNotice />}
       {noRates && <p className="mb-5 rounded border border-late/35 bg-late-wash px-3.5 py-2.5 text-[14px] text-late">Overtime multipliers are not set yet, so approved hours will not be paid until they are. Set them in Payroll settings.</p>}
       {locked && <p className="mb-5 rounded border border-line bg-raised px-3.5 py-2.5 text-[14px] text-ink-soft">Payroll for this month is finalized. Overtime can no longer be changed.</p>}
 

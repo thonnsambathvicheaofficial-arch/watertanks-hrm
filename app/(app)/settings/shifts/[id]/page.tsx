@@ -5,6 +5,8 @@ import { Button, Field, Flash, Input, MigrationNotice, PageHeader, WeekdayChecks
 import { ConfirmButton } from '@/components/ConfirmButton'
 import { decodeEcho, echoAll, echoOne } from '@/lib/echo'
 import { createShift, deleteShift, updateShift } from '../actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 
@@ -15,6 +17,7 @@ type Shift = { id: string; name: string; start: string; end: string; graceMinute
 
 // One page for both "new" (id = "new") and editing an existing shift.
 export default async function ShiftPage({ params, searchParams }: { params: { id: string }; searchParams: { error?: string; saved?: string; v?: string } }) {
+  const me = await guard()
   if (!(await hr.available())) return <><PageHeader title="Shift" /><MigrationNotice /></>
   const isNew = params.id === 'new'
   const shift: Shift | null = isNew ? null : await hr.shifts.get(params.id).catch(() => null)
@@ -28,6 +31,7 @@ export default async function ShiftPage({ params, searchParams }: { params: { id
     <>
       <PageHeader title={isNew ? 'New shift' : shift!.name} note={isNew ? 'Set the hours people scan in and out.' : 'Changing the hours updates every staff member on this shift.'} />
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('setup.edit') && <ReadOnlyNotice />}
       <form action={isNew ? createShift : updateShift} className="max-w-[560px] space-y-5">
         {!isNew && <input type="hidden" name="id" value={shift!.id} />}
         <Field label="Name"><Input name="name" defaultValue={val('name', shift?.name)} placeholder="Day, Night, Driver" required /></Field>

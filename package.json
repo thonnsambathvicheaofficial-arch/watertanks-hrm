@@ -10,7 +10,7 @@
     "build": "next build",
     "next": "next start",
     "lint": "tsc --noEmit",
-    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js"
+    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js && node tests/permissions.test.js && node tests/import.test.js"
   },
   "engines": {
     "node": ">=18"

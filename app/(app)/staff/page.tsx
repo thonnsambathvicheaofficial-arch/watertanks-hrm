@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { Button, EmptyState, Flash, Input, PageHeader, Select } from '@/components/ui'
 import { DAY_NAMES, to12h } from '@/lib/utils'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -16,6 +17,7 @@ type P = { pin: string; name: string; group: string; timeIn: string; timeOut: st
 type Opt = { id: string; name: string }
 
 export default async function StaffPage({ searchParams }: { searchParams: { q?: string; group?: string; error?: string; saved?: string } }) {
+  const me = await guard()
   const ready = await hr.available()
   const [all, shifts, depts]: [P[], Opt[], Opt[]] = await Promise.all([hr.staff.list(), ready ? hr.shifts.list() : [], ready ? hr.departments.list() : []])
   const shiftName = Object.fromEntries(shifts.map(s => [s.id, s.name]))
@@ -29,7 +31,7 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
   return (
     <>
       <PageHeader title="Staff" note={`${rows.length} of ${all.length} on record`}>
-        <Link href="/staff/new" className="inline-flex h-9 items-center gap-2 rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep"><Plus size={16} aria-hidden /> Add staff</Link>
+        {me.perms.includes('staff.edit') && <Link href="/staff/new" className="inline-flex h-9 items-center gap-2 rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep"><Plus size={16} aria-hidden /> Add staff</Link>}
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">

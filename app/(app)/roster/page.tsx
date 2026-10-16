@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import { Button, Flash, PageHeader, Select } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { LEGEND, cellStyle, type Cell } from '@/lib/roster-codes'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { buildRoster } = require('@/lib/roster')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -22,6 +23,7 @@ const shiftMonth = (m: string, n: number) => { const [y, mo] = m.split('-').map(
 const monthLabel = (m: string) => new Date(m + '-01T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
 export default async function RosterPage({ searchParams }: { searchParams: SP }) {
+  const me = await guard()
   const month = /^\d{4}-\d{2}$/.test(searchParams.month || '') ? searchParams.month! : thisMonth()
   const view = searchParams.view === 'hours' ? 'hours' : 'status'
   const group = searchParams.group || '', department = searchParams.department || ''
@@ -91,10 +93,14 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
                   const tip = `${r.name}, ${d.date}: ${c.status.replace('_', ' ')}${c.in ? `, ${c.in} to ${c.out ?? '?'}` : ''}${c.hours ? `, ${c.hours} h` : ''}${c.overridden ? ' (corrected by HR)' : ''}${c.note ? ` · ${c.note}` : ''}`
                   return (
                     <td key={d.d} className="border-b border-line p-[2px]">
-                      <Link href={`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`} title={tip} aria-label={tip}
-                        className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>
+                      {me.perms.includes('attendance.edit') ? (
+                        <Link href={`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`} title={tip} aria-label={tip}
+                          className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>
                         {label}
                       </Link>
+                        ) : (
+                        <span title={tip} aria-label={tip} className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>{label}</span>
+                        )}
                     </td>
                   )
                 })}

@@ -6,6 +6,8 @@ import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { Button, EmptyState, Flash, Input, LeaveStatusBadge, MigrationNotice, PageHeader, Select } from '@/components/ui'
 import { dayName } from '@/lib/utils'
 import { decideLeave } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const lv = require('@/lib/leave-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -17,6 +19,7 @@ export const dynamic = 'force-dynamic'
 type Req = { id: string; pin: string; typeCode: string; typeName: string; from: string; to: string; halfDayPeriod: string; days: number; reason: string; status: string; decidedBy: string; decisionNote: string; createdBy: string }
 
 export default async function LeavePage({ searchParams }: { searchParams: { status?: string; year?: string; typeId?: string; pin?: string; error?: string; saved?: string } }) {
+  const me = await guard()
   if (!(await lv.ready())) return <><PageHeader title="Leave" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const status = searchParams.status ?? 'pending'
   // Every view shows all years (newest first) unless a year is typed, so a request is never hidden by a default.
@@ -29,9 +32,10 @@ export default async function LeavePage({ searchParams }: { searchParams: { stat
   return (
     <>
       <PageHeader title="Leave" note={pending.length ? `${pending.length} waiting for a decision.` : 'Nothing is waiting for a decision.'}>
-        <Link href="/leave/new" className="inline-flex h-9 items-center gap-2 rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep"><Plus size={16} aria-hidden /> Record leave</Link>
+        {me.perms.includes('leave.edit') && <Link href="/leave/new" className="inline-flex h-9 items-center gap-2 rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep"><Plus size={16} aria-hidden /> Record leave</Link>}
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('leave.approve') && <ReadOnlyNotice text="You can see leave requests but not approve or reject them." />}
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
         <div className="w-[160px]"><Select name="status" defaultValue={status} aria-label="Status"><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option><option value="">All statuses</option></Select></div>

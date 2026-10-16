@@ -5,6 +5,7 @@ import { decodeEcho } from '@/lib/echo'
 import { profileFromEcho } from '../profileEcho'
 import { StaffForm } from '../StaffForm'
 import { createStaff } from '../actions'
+import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 
@@ -12,6 +13,7 @@ export const metadata: Metadata = { title: 'Add staff' }
 export const dynamic = 'force-dynamic'
 
 export default async function NewStaffPage({ searchParams }: { searchParams: { error?: string; v?: string } }) {
+  await guard()
   const ready = await hr.available()
   const [shifts, departments] = await Promise.all([ready ? hr.shifts.list() : [], ready ? hr.departments.list() : []])
   return (

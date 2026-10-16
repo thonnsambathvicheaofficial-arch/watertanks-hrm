@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
 import { Button, EmptyState, Flash, Input, MigrationNotice, PageHeader, Select } from '@/components/ui'
 import { savePaySetup } from './actions'
+import { guard } from '@/lib/guard'
+import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pr = require('@/lib/payroll-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -15,6 +17,7 @@ type P = { pin: string; name: string; group: string; resignedDate: string }
 const check = 'h-4 w-4 accent-[oklch(0.46_0.15_258)]'
 
 export default async function PaySetupPage({ searchParams }: { searchParams: { q?: string; group?: string; show?: string; error?: string; saved?: string } }) {
+  const me = await guard()
   if (!(await pr.ready())) return <><PageHeader title="Pay setup" /><MigrationNotice file="003_payroll.sql" /></>
   const [staff, setup]: [P[], Record<string, S>] = await Promise.all([hr.staff.list(), pr.structure.list()])
   const active = staff.filter(p => !p.resignedDate)
@@ -28,6 +31,7 @@ export default async function PaySetupPage({ searchParams }: { searchParams: { q
     <>
       <PageHeader title="Pay setup" note={`${active.length - noSalary.length} of ${active.length} current staff have a salary. People without one are left out of payroll.`} />
       <Flash error={searchParams.error} saved={searchParams.saved} />
+      {!me.perms.includes('payroll.edit') && <ReadOnlyNotice />}
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
         <div className="w-[260px]"><Input name="q" defaultValue={searchParams.q} placeholder="Search name or PIN" aria-label="Search staff" /></div>
