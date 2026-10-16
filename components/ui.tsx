@@ -123,12 +123,12 @@ export function Flash({ error, saved }: { error?: string; saved?: string }) {
 }
 
 // Shown on pages that need the migration before they can work.
-export function MigrationNotice() {
+export function MigrationNotice({ file = '001_shifts_departments_staff_profile.sql' }: { file?: string }) {
   return (
     <div className="rounded-md border border-line bg-raised p-5">
       <h2 className="text-[15px] font-semibold">One setup step is needed first</h2>
       <p className="mt-1.5 max-w-[60ch] text-[14px] text-ink-soft">
-        This page stores its data in new tables that do not exist yet. Run the file <code className="break-all rounded-sm bg-paper px-1.5 py-0.5 font-mono text-[13px] text-ink">migrations/001_shifts_departments_staff_profile.sql</code> once
+        This page stores its data in new tables that do not exist yet. Run the file <code className="break-all rounded-sm bg-paper px-1.5 py-0.5 font-mono text-[13px] text-ink">migrations/{file}</code> once
         in the Supabase SQL editor. It only adds tables and columns; nothing existing changes. Reload this page afterwards.
       </p>
     </div>

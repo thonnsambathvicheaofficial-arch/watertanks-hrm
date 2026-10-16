@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Activity, Building2, CalendarDays, CalendarOff, Clock, Fingerprint, LogOut, Menu, Repeat, Scale, Table2, Users, X, PartyPopper } from 'lucide-react'
+import { Activity, Building2, CalendarDays, CalendarOff, Clock, Fingerprint, LogOut, Menu, PartyPopper, Repeat, Scale, Settings2, Table2, Timer, Users, Wallet, X, ClipboardList, Landmark } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from './Logo'
 
@@ -15,12 +15,19 @@ const NAV = [
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/rotation', label: 'Rotation', icon: Repeat },
 ]
+const PAY = [
+  { href: '/payroll', label: 'Payroll', icon: Wallet },
+  { href: '/payroll/overtime', label: 'Overtime', icon: Timer },
+  { href: '/payroll/items', label: 'Monthly items', icon: ClipboardList },
+  { href: '/payroll/setup', label: 'Pay setup', icon: Landmark },
+]
 const SETUP = [
   { href: '/settings/shifts', label: 'Shifts', icon: Clock },
   { href: '/settings/departments', label: 'Departments', icon: Building2 },
   { href: '/holidays', label: 'Holidays', icon: PartyPopper },
   { href: '/settings/leave-types', label: 'Leave types', icon: CalendarOff },
   { href: '/settings/entitlements', label: 'Entitlements', icon: Scale },
+  { href: '/settings/payroll', label: 'Payroll settings', icon: Settings2 },
   { href: '/devices', label: 'Devices', icon: Fingerprint },
 ]
 
@@ -56,6 +63,8 @@ export function Sidebar({ username }: { username: string }) {
   const nav = (
     <nav aria-label="Main" className="flex-1 overflow-y-auto px-3 py-2">
       <ul className="space-y-0.5">{NAV.map(link)}</ul>
+      <p className="mb-1 mt-6 px-3 text-[12px] text-steel-soft">Payroll</p>
+      <ul className="space-y-0.5">{PAY.map(link)}</ul>
       <p className="mb-1 mt-6 px-3 text-[12px] text-steel-soft">Setup</p>
       <ul className="space-y-0.5">{SETUP.map(link)}</ul>
     </nav>
@@ -75,7 +84,7 @@ export function Sidebar({ username }: { username: string }) {
   return (
     <>
       {/* Desktop rail */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col bg-steel lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col bg-steel lg:flex print:hidden">
         <div className="flex h-16 items-center gap-3 px-5">
           <Logo size={34} />
           <span className="text-[14px] font-semibold leading-tight text-white">Song Fa<br /><span className="font-normal text-steel-soft">HR</span></span>
@@ -85,7 +94,7 @@ export function Sidebar({ username }: { username: string }) {
       </aside>
 
       {/* Mobile bar + drawer */}
-      <div className="sticky top-0 z-30 flex h-14 items-center justify-between bg-steel px-4 lg:hidden">
+      <div className="sticky top-0 z-30 flex h-14 items-center justify-between bg-steel px-4 lg:hidden print:hidden">
         <div className="flex items-center gap-3"><Logo size={28} /><span className="text-[14px] font-semibold text-white">Song Fa HR</span></div>
         <button onClick={() => setOpen(true)} aria-label="Open menu" className="rounded p-2 text-steel-text hover:bg-steel-raised"><Menu size={20} /></button>
       </div>

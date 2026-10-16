@@ -36,13 +36,23 @@ Next.js foundation, design system, sign-in, app shell, Live, Reports (daily and 
 - Verified live: 56 scripted write checks + every form driven in the browser (staff, holiday, leave record/approve/reject/cancel, correction save/remove, entitlements, leave types); reports 0 of 201,021 rows differ from the previous engine; all tables byte-identical after the throwaway ZZ records were removed. Bugs found and fixed during verification: timesheet export ignored its month (regex mangled in a shell patch), combined half-day code order depended on row order (now AL/UP by type order), the pending queue and other leave views hid requests outside the current year (now all years), and future days on the roster counted as absent (now blank).
 - Known limitation for the payroll phase: a half-day leave row has status leave, so its worked hours are not in PRESENT_FAMILY totals.
 
+## Done (phase 4: payroll; migration 003 run by Jea 2026-10-16 and verified live)
+Decisions confirmed by Jea: monthly salary with pro-rata deduction; overtime suggested from scans and approved by HR; overtime multipliers left empty for Jea to set; salaries in USD with tax and NSSF computed in KHR.
+- migrations/003_payroll.sql: settings (one row, everything empty), tax brackets, pay setup per person, company allowances, monthly items, overtime entries, payroll runs and slips. A finalized run and its slips are immutable via a database trigger (validated in an in-memory Postgres). Additive and idempotent.
+- Nothing is assumed: overtime multipliers, work days and hours per month, exchange rate, brackets and NSSF rates start empty. A run can be generated but not finalized until what its slips need is set; each slip lists what is missing. A button copies HRM Hub's current statutory values into empty boxes only, never overwriting.
+- lib/payroll-calc.js: same chain as HRM Hub (cross-checked on 5,000 random inputs, 0 differences, apart from showing no relief for tax-exempt people) with configurable rates.
+- Overtime: scans suggest (holiday or day off: all hours; normal day: time past shift end, 8 h cap, optional threshold); HR approves, edits or rejects; approve-all for a month. On real September data a 0-minute threshold suggests 2,038 entries (89% of worked days) because people scan out at 17:00 to 17:14; 30 minutes gives 408.
+- Pages: Payroll (months), month view with finalize and exports (register, bank, cash, NSSF), printable payslip, Overtime, Monthly items, Pay setup, Payroll settings.
+- Verified live: 60 scripted write checks (hand-calculated slips to the cent, all four exports, finalize, and the database trigger refusing edits, deletes, inserts and reopening when the app is bypassed) plus every form in the browser (settings, fill from HRM values, brackets, pay setup, monthly items, overtime incl. suggest and bulk reject, generate, discard, finalize, payslip, exports). The live settings row was restored to empty afterwards. Two locked test runs (2030-12, 2031-01, test people only) remain until migrations/cleanup_test_payroll.sql is run by Jea. Found and fixed while testing: absence deduction now capped at the salary; negative net pay is flagged on the slip; slow actions show progress and block double clicks; the brackets form keeps typed values after an error.
+- Known limits: mid-month joiners and leavers are not prorated (the slip says so; use an adjustment); a hand-made leave correction counts as paid; employer NSSF label order (health 0.8 / risk 2.6) follows HRM Hub and should be checked against the regulation.
+
 ## Still to do on the legacy parity list
 Users admin, staff PIN rename, per-device pull action, raw punches view, corrupted-punch view. (Timesheet and day overrides are now the Roster.)
 
 ## Next phases (each needs migrations Jea runs)
 2. (done, pending migration) Shifts incl. night and rotating, driver trips across midnight, staff profile fields, departments.
 3. (built, pending migration 002 and live verification) Roster grid with overrides, leave types, entitlements, requests and review queue, holidays.
-4. Payroll: structure, OT tiers (weekday, Sunday, public holiday), allowances, tax, NSSF, bank and cash lists.
+4. (built, pending migration 003 and live verification) Payroll: structure, OT tiers (weekday, day off, public holiday), allowances, tax, NSSF, bank and cash lists.
 5. Roles and permissions, audit trail, batch import.
 6. Parallel run against the live site for a full month, then cutover.
 

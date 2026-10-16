@@ -23,7 +23,7 @@ export default async function LeaveTypesPage({ searchParams }: { searchParams: {
     <>
       <PageHeader title="Leave types" note="The kinds of leave HR can record. Default days is the yearly allowance used by Fill from defaults on the Entitlements page. Leave it empty if a type has no fixed allowance." />
       <Flash error={searchParams.error} saved={searchParams.saved} />
-      {!ready ? <MigrationNotice /> : (
+      {!ready ? <MigrationNotice file="002_leave_holidays_roster.sql" /> : (
         <>
           <div className="mb-8 overflow-x-auto rounded-md border border-line bg-raised">
             <div className="min-w-[760px]">

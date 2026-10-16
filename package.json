@@ -9,7 +9,8 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "next": "next start",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js"
   },
   "engines": {
     "node": ">=18"

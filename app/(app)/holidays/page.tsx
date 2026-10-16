@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic'
 type H = { date: string; name: string; nameKh: string }
 
 export default async function HolidaysPage({ searchParams }: { searchParams: { year?: string; error?: string; saved?: string; v?: string } }) {
-  if (!(await lv.ready())) return <><PageHeader title="Holidays" /><MigrationNotice /></>
+  if (!(await lv.ready())) return <><PageHeader title="Holidays" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const year = Number(searchParams.year) || new Date().getFullYear()
   const list: H[] = await lv.holidays.list(year)
   const echo = decodeEcho(searchParams.v)

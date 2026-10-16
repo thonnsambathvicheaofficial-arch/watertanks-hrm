@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Record leave' }
 export const dynamic = 'force-dynamic'
 
 export default async function NewLeavePage({ searchParams }: { searchParams: { error?: string; v?: string; pin?: string } }) {
-  if (!(await lv.ready())) return <><PageHeader title="Record leave" /><MigrationNotice /></>
+  if (!(await lv.ready())) return <><PageHeader title="Record leave" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const [types, staff] = await Promise.all([lv.types.list({ activeOnly: true }), hr.staff.list()])
   const people = (staff as { pin: string; name: string; resignedDate: string }[]).filter(s => !s.resignedDate).sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
   const echo = decodeEcho(searchParams.v)

@@ -17,7 +17,7 @@ type P = { pin: string; name: string; resignedDate: string }
 type Req = { pin: string; typeId: string; days: number; status: string }
 
 export default async function EntitlementsPage({ searchParams }: { searchParams: { year?: string; q?: string; error?: string; saved?: string } }) {
-  if (!(await lv.ready())) return <><PageHeader title="Entitlements" /><MigrationNotice /></>
+  if (!(await lv.ready())) return <><PageHeader title="Entitlements" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const year = Number(searchParams.year) || new Date().getFullYear()
   const q = (searchParams.q || '').trim().toLowerCase()
   const [types, staff, ent, reqs] = await Promise.all([lv.types.list({ activeOnly: true }), hr.staff.list(), lv.entitlements.forYear(year), lv.requests.list({ year, status: 'approved' })]) as [T[], P[], Record<string, Record<string, number>>, Req[]]

@@ -14,3 +14,12 @@ export function to12h(hhmm: string | null | undefined): string {
 
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 export const dayName = (ymd: string) => DAY_NAMES[new Date(ymd + 'T00:00:00').getDay()]
+
+// 1234.5 -> "$1,234.50". Negative amounts keep the minus sign in front of the dollar sign.
+export function usd(n: number | null | undefined): string {
+  if (n === null || n === undefined || Number.isNaN(n)) return ''
+  const s = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return `${n < 0 ? '-' : ''}$${s}`
+}
+
+export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']

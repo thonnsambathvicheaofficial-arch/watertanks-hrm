@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
 type Req = { id: string; pin: string; typeCode: string; typeName: string; from: string; to: string; halfDayPeriod: string; days: number; reason: string; status: string; decidedBy: string; decisionNote: string; createdBy: string }
 
 export default async function LeavePage({ searchParams }: { searchParams: { status?: string; year?: string; typeId?: string; pin?: string; error?: string; saved?: string } }) {
-  if (!(await lv.ready())) return <><PageHeader title="Leave" /><MigrationNotice /></>
+  if (!(await lv.ready())) return <><PageHeader title="Leave" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const status = searchParams.status ?? 'pending'
   // Every view shows all years (newest first) unless a year is typed, so a request is never hidden by a default.
   const year = searchParams.year ?? ''
