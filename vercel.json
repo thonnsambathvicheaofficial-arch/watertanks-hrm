@@ -1,4 +1,11 @@
 {
   "framework": "nextjs",
-  "functions": { "app/api/cron/pull/route.ts": { "maxDuration": 60 } }
+  "functions": {
+    "app/api/cron/pull/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/fast/route.ts": {
+      "maxDuration": 30
+    }
+  }
 }

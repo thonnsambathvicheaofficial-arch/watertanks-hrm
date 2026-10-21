@@ -81,6 +81,11 @@ Decisions confirmed by Jea: monthly salary with pro-rata deduction; overtime sug
 - migrations/007_telegram_leave_digest.sql: optional daily "On leave today" list (full day, morning, afternoon sections), sent once per working day at a chosen time (default 07:30, up to 3 hours later), skipped on days off, holidays and when nobody is on leave; claimed before sending so it is sent once. Settings page has the checkbox and time once 007 is run.
 - Leave period (morning/afternoon) and leave type name now travel with each leave day (lib/leave-calc.js, lib/leave-store.js); no schema change.
 
+## Done (phase 9: live updates; migration 008 written)
+- lib/zk-tail.js reads only the newest scans from a device (checked read-only against the K40 and B3-C: identical to the last records of a full read; K40 0.2 s vs 0.6 s, B3-C 0.65 s vs 2.3 s).
+- lib/zkfast.js + /api/cron/fast: asks each device for its record count (about 50 ms), reads the newest records only when it grew, saves them, then runs the Telegram notifier. One check per device at a time (lease), baseline in devices.fast_count (migration 008). The full sync remains the completeness safety net.
+- db/pg-cron-fast-poll.sql: a Supabase pg_cron ticker every 10 s, 05:00 to 20:59 Phnom Penh. scripts/live-poll.js (npm run live): the same ticker from any computer.
+
 ## Still to do on the legacy parity list
 None known beyond the cutover checklist below.
 

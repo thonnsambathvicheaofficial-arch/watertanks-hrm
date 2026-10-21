@@ -66,7 +66,7 @@ for (const f of walk(path.join(root, 'app/(app)')).filter(f => /actions\.ts$/.te
 
 // ── API routes ──
 console.log('api routes')
-const OPEN = new Set(['app/api/login/route.ts', 'app/api/logout/route.ts', 'app/api/cron/pull/route.ts', 'app/(app)/payroll/open/route.ts'])
+const OPEN = new Set(['app/api/login/route.ts', 'app/api/logout/route.ts', 'app/api/cron/pull/route.ts', 'app/api/cron/fast/route.ts', 'app/(app)/payroll/open/route.ts'])
 for (const f of walk(path.join(root, 'app')).filter(f => /route\.ts$/.test(f))) {
   const name = rel(f)
   if (OPEN.has(name)) continue
@@ -74,6 +74,7 @@ for (const f of walk(path.join(root, 'app')).filter(f => /route\.ts$/.test(f))) 
 }
 const cron = read(path.join(root, 'app/api/cron/pull/route.ts'))
 ok(/CRON_SECRET|authorization/i.test(cron), 'the cron route is protected by its own secret')
+ok(/CRON_SECRET/.test(read(path.join(root, 'app/api/cron/fast/route.ts'))), 'the fast-poll route is protected by its own secret')
 
 console.log(fails ? `\n${fails} FAILED` : '\nall passed')
 process.exit(fails ? 1 : 0)

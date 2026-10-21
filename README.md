@@ -14,7 +14,7 @@ Next.js 14 (App Router) on Vercel, Supabase (Postgres) for data. Product and des
 | Pages, server actions, API routes | `app/` |
 | Shared UI | `components/` |
 | Punch engine, device sync, stores, payroll, notifier | `lib/` (CommonJS, shared by pages and the sync) |
-| Database changes, run by hand in order | `migrations/` (001 to 007) on top of `db/base-schema.sql` |
+| Database changes, run by hand in order | `migrations/` (001 to 008) on top of `db/base-schema.sql` |
 | Tests | `tests/` (`npm test`) |
 
 ## Run it locally
@@ -29,7 +29,7 @@ npm run dev              # http://localhost:3100
 
 ## Set up a new environment
 
-1. **Supabase:** create a project. In the SQL editor run `db/base-schema.sql`, then `migrations/001` to `007` in order.
+1. **Supabase:** create a project. In the SQL editor run `db/base-schema.sql`, then `migrations/001` to `008` in order.
    Each is additive and safe to run twice. `migrations/cleanup_test_*.sql` are one-off helpers, not part of setup.
 2. **Environment variables** (see `.env.example`): `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SESSION_SECRET`, `CRON_SECRET`,
    `TELEGRAM_BOT_TOKEN`.
@@ -38,6 +38,18 @@ npm run dev              # http://localhost:3100
 4. **Devices:** Devices > Add device, with each reader's router address (public host and port).
 5. **Scheduler:** call `GET /api/cron/pull` with the header `Authorization: Bearer <CRON_SECRET>` every few minutes.
    It reads each device, saves new scans and sends Telegram notifications.
+
+## Live updates (scan notifications within seconds)
+
+Two schedulers work together:
+
+- **Fast poll** (`/api/cron/fast`, every ~10 s during working hours): asks each device how many records it holds. Only when
+  that grew does it read the newest few records (`lib/zk-tail.js`), save them and send the Telegram message. Needs migration 008.
+  The ticker is a Supabase pg_cron job: run `db/pg-cron-fast-poll.sql` once (put your CRON_SECRET in it).
+- **Full sync** (`/api/cron/pull`, every few minutes): reads whole logs and proves nothing was missed. It stays as the safety net.
+
+To run the fast poll from any computer instead (or as well): `npm run live`. Several tickers can run together; each scan is
+saved once and announced once.
 
 ## Deploy on Vercel
 

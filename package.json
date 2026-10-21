@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js && node tests/permissions.test.js && node tests/import.test.js && node tests/notify.test.js"
+    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js && node tests/permissions.test.js && node tests/import.test.js && node tests/notify.test.js && node tests/zkfast.test.js",
+    "live": "node scripts/live-poll.js"
   },
   "engines": {
     "node": ">=18"
