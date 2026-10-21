@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cronRefusal } from '@/lib/cron-auth'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const store = require('@/lib/store')
 
@@ -9,9 +10,8 @@ export const maxDuration = 60
 // Called on a schedule with `Authorization: Bearer <CRON_SECRET>`. Same contract
 // as the legacy Express route, so the existing scheduler needs no change.
 export async function GET(req: Request) {
-  if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const refused = cronRefusal(req)
+  if (refused) return refused
   const { pullAll, refreshDeviceUsers } = require('@/lib/zkpull')
   const full = new URL(req.url).searchParams.get('full') === '1'
   const result = await pullAll({ full })

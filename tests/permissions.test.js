@@ -72,9 +72,10 @@ for (const f of walk(path.join(root, 'app')).filter(f => /route\.ts$/.test(f))) 
   if (OPEN.has(name)) continue
   ok(/denyUnless\(req, '[a-z]+\.[a-z]+'\)/.test(read(f)), `${name} checks a permission`)
 }
-const cron = read(path.join(root, 'app/api/cron/pull/route.ts'))
-ok(/CRON_SECRET|authorization/i.test(cron), 'the cron route is protected by its own secret')
-ok(/CRON_SECRET/.test(read(path.join(root, 'app/api/cron/fast/route.ts'))), 'the fast-poll route is protected by its own secret')
+const auth = read(path.join(root, 'lib/cron-auth.ts'))
+ok(/cronRefusal\(req\)/.test(read(path.join(root, 'app/api/cron/pull/route.ts'))), 'the cron route is protected by its own secret')
+ok(/cronRefusal\(req\)/.test(read(path.join(root, 'app/api/cron/fast/route.ts'))), 'the fast-poll route is protected by its own secret')
+ok(/if \(!secret\)/.test(auth) && /Bearer \$\{secret\}/.test(auth), 'with no CRON_SECRET set the routes refuse everything, so "Bearer undefined" cannot get in')
 // Every secret-protected scheduler route must also be open in the middleware, or the session check answers 401
 // "Not authenticated" before the route ever sees the secret (this hid the fast poll behind the login wall).
 const mw = read(path.join(root, 'middleware.ts'))

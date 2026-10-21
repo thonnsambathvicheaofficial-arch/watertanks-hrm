@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cronRefusal } from '@/lib/cron-auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -8,9 +9,8 @@ export const maxDuration = 30
 // Asks each device how many records it holds, reads only the newest ones when that grew, saves them and announces them.
 // The scheduled /api/cron/pull stays as the safety net that proves nothing was missed.
 export async function GET(req: Request) {
-  if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const refused = cronRefusal(req)
+  if (refused) return refused
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { fastPoll } = require('@/lib/zkfast')
   try {
