@@ -7,6 +7,7 @@ import { to12h } from '@/lib/utils'
 import { assignRotation, removeRotation } from './actions'
 import { guard } from '@/lib/guard'
 import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
+import { DepartmentSelect, GroupSelect, cleanDepartment, cleanGroup, inDepartment } from '@/components/StaffFilters'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -31,9 +32,9 @@ export default async function RotationPage({ searchParams }: { searchParams: { d
   const ticked = new Set(echoAll(echo, 'pins'))
   const name = Object.fromEntries(staff.map(p => [p.pin, p.name]))
   const shiftName = Object.fromEntries(shifts.map(s => [s.id, s.name]))
-  const dept = searchParams.department || '', group = searchParams.group || ''
+  const dept = cleanDepartment(searchParams.department, depts), group = cleanGroup(searchParams.group)
   const shown = staff
-    .filter(p => !p.resignedDate && (!dept || p.departmentId === dept) && (!group || p.group === group))
+    .filter(p => !p.resignedDate && inDepartment(dept, p.departmentId) && (!group || p.group === group))
     .sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
   const current = assignments.filter(a => !a.to || a.to >= today).sort((a, b) => (a.from < b.from ? -1 : 1))
 
@@ -44,8 +45,8 @@ export default async function RotationPage({ searchParams }: { searchParams: { d
       {!me.perms.includes('staff.edit') && <ReadOnlyNotice />}
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3" aria-label="Choose who to show">
-        <div className="w-[200px]"><Field label="Department"><Select name="department" defaultValue={dept}><option value="">All departments</option>{depts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field></div>
-        <div className="w-[170px]"><Field label="Group"><Select name="group" defaultValue={group}><option value="">Everyone</option><option value="office">Office staff</option><option value="worker">Workers</option></Select></Field></div>
+        <div className="w-[200px]"><Field label="Department"><DepartmentSelect value={dept} departments={depts} /></Field></div>
+        <div className="w-[170px]"><Field label="Group"><GroupSelect value={group} allLabel="Everyone" /></Field></div>
         <Button type="submit">Show</Button>
       </form>
 

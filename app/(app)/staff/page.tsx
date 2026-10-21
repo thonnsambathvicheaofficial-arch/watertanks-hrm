@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
-import { Button, EmptyState, Flash, Input, PageHeader, Select } from '@/components/ui'
+import { Button, EmptyState, Flash, Input, PageHeader } from '@/components/ui'
+import { DepartmentSelect, GroupSelect, cleanDepartment, inDepartment } from '@/components/StaffFilters'
 import { DAY_NAMES, to12h } from '@/lib/utils'
 import { guard } from '@/lib/guard'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic'
 type P = { pin: string; name: string; group: string; timeIn: string; timeOut: string; offDays: number[]; aliases: string[]; departmentId: string; shiftId: string; position: string; staffCode?: string; nameKh?: string }
 type Opt = { id: string; name: string }
 
-export default async function StaffPage({ searchParams }: { searchParams: { q?: string; group?: string; error?: string; saved?: string } }) {
+export default async function StaffPage({ searchParams }: { searchParams: { q?: string; group?: string; department?: string; error?: string; saved?: string } }) {
   const me = await guard()
   const ready = await hr.available()
   const ext = await hr.extended()
@@ -25,8 +26,9 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
   const deptName = Object.fromEntries(depts.map(d => [d.id, d.name]))
   const q = (searchParams.q || '').trim().toLowerCase()
   const group = searchParams.group || ''
+  const department = cleanDepartment(searchParams.department, depts)
   const rows = all
-    .filter(e => (!group || e.group === group) && (!q || e.pin.includes(q) || e.name.toLowerCase().includes(q) || (e.staffCode || '').toLowerCase().includes(q) || (e.nameKh || '').includes(q) || (e.position || '').toLowerCase().includes(q)))
+    .filter(e => (!group || e.group === group) && inDepartment(department, e.departmentId) && (!q || e.pin.includes(q) || e.name.toLowerCase().includes(q) || (e.staffCode || '').toLowerCase().includes(q) || (e.nameKh || '').includes(q) || (e.position || '').toLowerCase().includes(q)))
     .sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
 
   return (
@@ -38,8 +40,10 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
       <Flash error={searchParams.error} saved={searchParams.saved} />
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
         <div className="w-full max-w-[280px]"><Input name="q" defaultValue={searchParams.q} placeholder="Name, PIN, staff ID, position" aria-label="Search staff" /></div>
-        <div className="w-[170px]"><Select name="group" defaultValue={group} aria-label="Group"><option value="">All groups</option><option value="office">Office staff</option><option value="worker">Workers</option></Select></div>
+        <div className="w-[170px]"><GroupSelect value={group} /></div>
+        <div className="w-[190px]"><DepartmentSelect value={department} departments={depts} /></div>
         <Button type="submit">Filter</Button>
+        {(group || department || q) && <Link href="/staff" className="touch-target text-[13px] text-ink-soft underline-offset-2 hover:text-ink hover:underline">Clear</Link>}
       </form>
       <TableWrap>
         <Table>

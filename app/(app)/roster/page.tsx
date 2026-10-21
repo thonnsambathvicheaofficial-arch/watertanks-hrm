@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
-import { Button, Flash, PageHeader, Select } from '@/components/ui'
+import { Button, Flash, PageHeader } from '@/components/ui'
+import { DepartmentSelect, GroupSelect, filterNote } from '@/components/StaffFilters'
 import { cn } from '@/lib/utils'
 import { LEGEND, cellStyle, type Cell } from '@/lib/roster-codes'
 import { guard } from '@/lib/guard'
@@ -36,11 +37,11 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
     const p = new URLSearchParams(Object.entries({ month, group, department, view, ...over }).filter(([, v]) => v) as [string, string][])
     return `/roster?${p.toString()}`
   }
-  const exportQs = new URLSearchParams(Object.entries({ month, group }).filter(([, v]) => v) as [string, string][]).toString()
+  const exportQs = new URLSearchParams(Object.entries({ month, group, department }).filter(([, v]) => v) as [string, string][]).toString()
 
   return (
     <>
-      <PageHeader title="Roster" note={`${monthLabel(month)} · ${rows.length} staff. Select a day to correct it.`}>
+      <PageHeader title="Roster" note={`${monthLabel(month)} · ${rows.length} staff${filterNote(group, department, depts) ? ` (${filterNote(group, department, depts)})` : ''}. Select a day to correct it.`}>
         <a href={`/api/export/timesheet?${exportQs}`}><Button><Download size={16} aria-hidden /> Export Excel</Button></a>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
@@ -50,9 +51,10 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
         <form method="get" className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="month" value={month} />
           <input type="hidden" name="view" value={view} />
-          <div className="w-[150px]"><Select name="group" defaultValue={group} aria-label="Group"><option value="">Everyone</option><option value="office">Office staff</option><option value="worker">Workers</option></Select></div>
-          {ready && depts.length > 0 && <div className="w-[170px]"><Select name="department" defaultValue={department} aria-label="Department"><option value="">All departments</option>{depts.map((d: { id: string; name: string }) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></div>}
+          <div className="w-[150px]"><GroupSelect value={group} /></div>
+          {ready && depts.length > 0 && <div className="w-[170px]"><DepartmentSelect value={department} departments={depts} /></div>}
           <Button type="submit">Filter</Button>
+          {(group || department) && <Link href={href({ group: '', department: '' })} className="touch-target text-[13px] text-ink-soft underline-offset-2 hover:text-ink hover:underline">Clear</Link>}
         </form>
         <div className="ml-auto inline-flex rounded border border-line-strong bg-raised p-0.5 text-[13px]" role="group" aria-label="Cell content">
           {(['status', 'hours'] as const).map(v => (

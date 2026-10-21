@@ -8,6 +8,7 @@ import { dayName } from '@/lib/utils'
 import { decideLeave } from './actions'
 import { guard } from '@/lib/guard'
 import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
+import { DepartmentSelect, GroupSelect, cleanDepartment, cleanGroup, inDepartment, type Dept } from '@/components/StaffFilters'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const lv = require('@/lib/leave-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -18,14 +19,22 @@ export const dynamic = 'force-dynamic'
 
 type Req = { id: string; pin: string; typeCode: string; typeName: string; from: string; to: string; halfDayPeriod: string; days: number; reason: string; status: string; decidedBy: string; decisionNote: string; createdBy: string }
 
-export default async function LeavePage({ searchParams }: { searchParams: { status?: string; year?: string; typeId?: string; pin?: string; error?: string; saved?: string } }) {
+export default async function LeavePage({ searchParams }: { searchParams: { status?: string; year?: string; typeId?: string; pin?: string; group?: string; department?: string; error?: string; saved?: string } }) {
   const me = await guard()
   if (!(await lv.ready())) return <><PageHeader title="Leave" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const status = searchParams.status ?? 'pending'
   // Every view shows all years (newest first) unless a year is typed, so a request is never hidden by a default.
   const year = searchParams.year ?? ''
   const [types, staff, pending] = await Promise.all([lv.types.list(), hr.staff.list(), lv.requests.list({ status: 'pending' })])
-  const rows: Req[] = await lv.requests.list({ status: status || undefined, year: year ? Number(year) : undefined, typeId: searchParams.typeId || undefined, pin: searchParams.pin || undefined })
+  const depts: Dept[] = (await hr.available()) ? await hr.departments.list() : []
+  const group = cleanGroup(searchParams.group)
+  const department = cleanDepartment(searchParams.department, depts)
+  // Group and department narrow the list to those staff members' requests.
+  const inScope = group || department
+    ? new Set<string>(staff.filter((s: { pin: string; group: string; departmentId: string }) => (!group || s.group === group) && inDepartment(department, s.departmentId)).map((s: { pin: string }) => s.pin))
+    : null
+  const found: Req[] = await lv.requests.list({ status: status || undefined, year: year ? Number(year) : undefined, typeId: searchParams.typeId || undefined, pin: searchParams.pin || undefined })
+  const rows = inScope ? found.filter(r => inScope.has(r.pin)) : found
   const name: Record<string, string> = Object.fromEntries(staff.map((s: { pin: string; name: string }) => [s.pin, s.name]))
   const when = (r: Req) => (r.from === r.to ? `${r.from} ${dayName(r.from).slice(0, 3)}${r.halfDayPeriod ? ` · ${r.halfDayPeriod} half day` : ''}` : `${r.from} to ${r.to}`)
 
@@ -42,6 +51,8 @@ export default async function LeavePage({ searchParams }: { searchParams: { stat
         <div className="w-[190px]"><Select name="typeId" defaultValue={searchParams.typeId || ''} aria-label="Leave type"><option value="">All types</option>{types.map((t: { id: string; name: string }) => <option key={t.id} value={t.id}>{t.name}</option>)}</Select></div>
         <div className="w-[110px]"><Input name="year" type="number" min={2000} max={2100} defaultValue={year} placeholder="All years" aria-label="Year" /></div>
         <div className="w-[130px]"><Input name="pin" defaultValue={searchParams.pin} placeholder="PIN" inputMode="numeric" aria-label="PIN" /></div>
+        <div className="w-[160px]"><GroupSelect value={group} /></div>
+        <div className="w-[190px]"><DepartmentSelect value={department} departments={depts} /></div>
         <Button type="submit">Filter</Button>
       </form>
 
