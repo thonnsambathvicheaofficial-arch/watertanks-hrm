@@ -1,31 +1,31 @@
 -- ============================================================================
--- Scan notifications within seconds: a Supabase pg_cron ticker for /api/cron/fast
+-- Scan notifications within seconds: Supabase pg_cron tickers for /api/cron/fast
 -- ============================================================================
--- Run this whole file once in the Supabase SQL editor (Dashboard > SQL Editor > New query), AFTER migration 008.
--- Nothing to paste or edit.
+-- Run this whole file in the Supabase SQL editor (Dashboard > SQL Editor > New query), AFTER migration 008.
+-- Nothing to paste or edit. Re-running it updates the jobs in place and keeps the existing secret.
 --
--- Every 20 seconds during working hours it calls the site's fast poll, which asks each device "how many records
--- do you hold?", reads only the newest scans if that grew, saves them and sends the Telegram notification.
--- A scan is announced about 5 to 25 seconds after it happens (20 s tick, plus about 5 s to read, save and send).
+-- The fast poll asks each reader "how many records do you hold?", reads only the newest scans if that grew, saves them
+-- and sends the Telegram message (about 2 s from save to Telegram, with the site running in Tokyo next to the database).
+--
+-- Two jobs, Phnom Penh time:
+--   songfa-fast-poll        every 5 s, Monday to Saturday, 06:00 to 18:59   (the working day: a scan is announced in
+--                           about 5 to 7 s: up to 5 s waiting for the next tick, then read, save and send)
+--   songfa-fast-poll-quiet  every 30 s, 05:00 to 19:59 at every other time (early and late hours, Sundays)
 --
 -- The password the call carries lives in the table public.cron_secrets (made here, with a random value). The job reads
 -- it from there on every call, and the site reads the same row to check it, so no secret is copied into Vercel or into
--- this file and the two can never differ. Re-running this file keeps the existing secret and updates the job in place.
--- The table is locked: only the database owner and the site's service key can read it.
---
--- Hours are Phnom Penh time: 05:00 to 19:59, every day.
+-- this file and the two can never differ. The table is locked: only the database owner and the site's service key can read it.
 --
 -- Sized for the Vercel Hobby (free) plan. Hobby includes, per month: 1,000,000 function invocations, 4 hours of
 -- Active CPU and 360 GB-hours of provisioned memory (vercel.com/docs/plans/hobby, checked 2026-10). Going over
--- pauses the whole project for up to 30 days, the sign-in pages included, so this stays well inside the limits:
+-- pauses the whole project for up to 30 days, the sign-in pages included, so keep an eye on it:
 --
---   ticks:      3 per minute x 60 x 15 hours x 30 days  = about 81,000 a month   (8% of the invocation allowance)
---   CPU:        an idle check measured at about 22 ms of CPU here; allow 100 ms on Vercel
---               = 81,000 x 0.1 s = about 2.3 hours of the 4 hours, in the worst case. The 5-minute full sync
---               uses a little more. If Vercel's Usage page shows Active CPU running above half of the allowance
---               by mid-month, make the interval '30 seconds' or narrow the hours below.
---
--- To use fewer calls: change '20 seconds' to '30 seconds', or the hour range (between 5 and 19) to e.g. 6 and 18.
+--   busy job:   13 hours x 720 ticks x 26 days  = about 243,000 a month
+--   quiet job:  about 13,000 a month             -> roughly 256,000 calls, 26% of the invocation allowance
+--   CPU:        an idle tick measured about 20 ms of CPU locally; Vercel's own overhead is unknown. 256,000 x 20 ms is
+--               1.4 hours; if overhead brings it to 50 ms it is 3.6 hours of the 4. The budget is about 9 minutes of
+--               Active CPU per working day: after the first full day, check Vercel > Usage > Active CPU, and if the
+--               day is above that, change '5 seconds' to '10 seconds' below and re-run this file.
 -- ============================================================================
 
 create extension if not exists pg_cron;
@@ -43,24 +43,42 @@ insert into public.cron_secrets (name, value)
 values ('scheduler', replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''))
 on conflict (name) do nothing;
 
+-- The working day: every 5 seconds, Monday to Saturday, 06:00 to 18:59.
 select cron.schedule(
   'songfa-fast-poll',
-  '20 seconds',
+  '5 seconds',
   $$
   select net.http_get(
     url     := 'https://watertanks-hrm.vercel.app/api/cron/fast',
     headers := jsonb_build_object('Authorization', 'Bearer ' || (select value from public.cron_secrets where name = 'scheduler')),
     timeout_milliseconds := 25000
   )
-  where extract(hour from (now() at time zone 'Asia/Phnom_Penh')) between 5 and 19;
+  where extract(isodow from (now() at time zone 'Asia/Phnom_Penh')) between 1 and 6
+    and extract(hour from (now() at time zone 'Asia/Phnom_Penh')) between 6 and 18;
   $$
 );
 
--- Check: the job exists and the secret is set (shows only its length, never the value).
-select j.jobid, j.jobname, j.schedule, j.active, (select length(value) from public.cron_secrets where name = 'scheduler') as secret_length
-from cron.job j where j.jobname = 'songfa-fast-poll';
+-- Everything else inside 05:00 to 19:59 (the first and last hour, and Sundays): every 30 seconds.
+select cron.schedule(
+  'songfa-fast-poll-quiet',
+  '30 seconds',
+  $$
+  select net.http_get(
+    url     := 'https://watertanks-hrm.vercel.app/api/cron/fast',
+    headers := jsonb_build_object('Authorization', 'Bearer ' || (select value from public.cron_secrets where name = 'scheduler')),
+    timeout_milliseconds := 25000
+  )
+  where extract(hour from (now() at time zone 'Asia/Phnom_Penh')) between 5 and 19
+    and not (extract(isodow from (now() at time zone 'Asia/Phnom_Penh')) between 1 and 6
+             and extract(hour from (now() at time zone 'Asia/Phnom_Penh')) between 6 and 18);
+  $$
+);
 
--- ── To stop it ──────────────────────────────────────────────────────────────
---   select cron.unschedule('songfa-fast-poll');
+-- Check: both jobs exist and the secret is set (shows only its length, never the value).
+select j.jobid, j.jobname, j.schedule, j.active, (select length(value) from public.cron_secrets where name = 'scheduler') as secret_length
+from cron.job j where j.jobname like 'songfa-fast-poll%' order by j.jobname;
+
+-- ── To stop them ────────────────────────────────────────────────────────────
+--   select cron.unschedule('songfa-fast-poll'); select cron.unschedule('songfa-fast-poll-quiet');
 -- ── To see recent calls and their answers ───────────────────────────────────
 --   select id, status_code, created, left(content::text, 200) from net._http_response order by id desc limit 10;

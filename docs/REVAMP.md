@@ -84,7 +84,7 @@ Decisions confirmed by Jea: monthly salary with pro-rata deduction; overtime sug
 ## Done (phase 9: live updates; migration 008 written)
 - lib/zk-tail.js reads only the newest scans from a device (checked read-only against the K40 and B3-C: identical to the last records of a full read; K40 0.2 s vs 0.6 s, B3-C 0.65 s vs 2.3 s).
 - lib/zkfast.js + /api/cron/fast: asks each device for its record count (about 50 ms), reads the newest records only when it grew, saves them, then runs the Telegram notifier. One check per device at a time (lease), baseline in devices.fast_count (migration 008). The full sync remains the completeness safety net.
-- db/pg-cron-fast-poll.sql: a Supabase pg_cron ticker every 20 s, 05:00 to 19:59 Phnom Penh (about 81,000 calls a month, sized for the Vercel Hobby limits: 1M invocations, 4 h Active CPU). scripts/live-poll.js (npm run live): the same ticker from any computer.
+- db/pg-cron-fast-poll.sql: Supabase pg_cron tickers: every 5 s Mon-Sat 06:00-18:59 and every 30 s at other times (about 256,000 calls a month, sized for the Vercel Hobby limits: 1M invocations, 4 h Active CPU; check Usage after the first full day). scripts/live-poll.js (npm run live): the same ticker from any computer.
 
 ## Still to do on the legacy parity list
 None known beyond the cutover checklist below.
