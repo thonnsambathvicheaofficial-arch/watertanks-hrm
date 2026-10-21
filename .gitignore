@@ -11,3 +11,5 @@ next-env.d.ts
 *.tsbuildinfo
 .next-prod/
 .vercel/
+.claude/
+.impeccable/
