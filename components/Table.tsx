@@ -15,12 +15,12 @@ export function Th({ children, align = 'left', className }: { children?: ReactNo
 }
 
 export function Td({ children, align = 'left', className, colSpan }: { children?: ReactNode; align?: 'left' | 'right'; className?: string; colSpan?: number }) {
-  return <td colSpan={colSpan} className={cn('border-b border-line px-3 py-2.5 align-top text-[14px] last-of-type:border-b-0', align === 'right' && 'num text-right', className)}>{children}</td>
+  return <td colSpan={colSpan} className={cn('border-b border-line px-3 py-2.5 align-top text-[14px]', align === 'right' && 'num text-right', className)}>{children}</td>
 }
 
 export function Table({ children, wide = true }: { children: ReactNode; wide?: boolean }) {
   return (
-    <table className={cn('w-full border-collapse [&_tbody_tr:hover]:bg-brand-wash/40', wide && 'min-w-[880px]')}>
+    <table className={cn('w-full border-collapse [&_tbody_tr:hover]:bg-brand-wash/40 [&_tbody_tr:last-child_td]:border-b-0', wide && 'min-w-[880px]')}>
       {children}
     </table>
   )
