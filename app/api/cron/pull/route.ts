@@ -10,7 +10,7 @@ export const maxDuration = 60
 // Called on a schedule with `Authorization: Bearer <CRON_SECRET>`. Same contract
 // as the legacy Express route, so the existing scheduler needs no change.
 export async function GET(req: Request) {
-  const refused = cronRefusal(req)
+  const refused = await cronRefusal(req)
   if (refused) return refused
   const { pullAll, refreshDeviceUsers } = require('@/lib/zkpull')
   const full = new URL(req.url).searchParams.get('full') === '1'

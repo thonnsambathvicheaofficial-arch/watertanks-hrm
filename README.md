@@ -45,7 +45,7 @@ Two schedulers work together:
 
 - **Fast poll** (`/api/cron/fast`, every 20 s, 05:00 to 19:59, sized for the Vercel Hobby plan): asks each device how many records it holds. Only when
   that grew does it read the newest few records (`lib/zk-tail.js`), save them and send the Telegram message. Needs migration 008.
-  The ticker is a Supabase pg_cron job: run `db/pg-cron-fast-poll.sql` once (put your CRON_SECRET in it).
+  The ticker is a Supabase pg_cron job: run `db/pg-cron-fast-poll.sql` once (nothing to paste: it makes its own secret in the `cron_secrets` table, which the job and the site both read).
 - **Full sync** (`/api/cron/pull`, every few minutes): reads whole logs and proves nothing was missed. It stays as the safety net.
 
 To run the fast poll from any computer instead (or as well): `npm run live`. Several tickers can run together; each scan is

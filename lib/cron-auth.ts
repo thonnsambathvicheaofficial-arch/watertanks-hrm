@@ -1,12 +1,30 @@
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const sb = require('@/lib/supabase')
 
-// Shared check for the scheduler routes: `Authorization: Bearer <CRON_SECRET>`.
+// Shared check for the scheduler routes: `Authorization: Bearer <secret>`.
 // Returns a response to send back when the call must be refused, or null when it may go ahead.
-// A server with no CRON_SECRET refuses everything (it must never accept the header "Bearer undefined"),
-// and says so, so a new deployment that is missing the variable is easy to spot.
-export function cronRefusal(req: Request): NextResponse | null {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return NextResponse.json({ error: 'CRON_SECRET is not set on this server. Add it under the project\'s Environment Variables and redeploy.' }, { status: 503 })
-  if (req.headers.get('authorization') !== `Bearer ${secret}`) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  return null
+//
+// The secret is accepted from either place, so the scheduler never depends on two copies matching by hand:
+//   - the cron_secrets table in the database (the pg_cron job reads the same row when it makes the call), or
+//   - the CRON_SECRET environment variable (for any other scheduler).
+// With neither set, everything is refused (never the header "Bearer undefined").
+const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b))
+
+async function dbSecret(name: string): Promise<string | null> {
+  try {
+    const { data } = await sb.from('cron_secrets').select('value').eq('name', name).maybeSingle()
+    return data && typeof data.value === 'string' && data.value ? data.value : null
+  } catch { return null }   // table not created yet: fall back to the environment variable
+}
+
+export async function cronRefusal(req: Request, name = 'scheduler'): Promise<NextResponse | null> {
+  const given = req.headers.get('authorization') || ''
+  const env = process.env.CRON_SECRET
+  if (env && same(given, `Bearer ${env}`)) return null
+  const stored = await dbSecret(name)
+  if (stored && same(given, `Bearer ${stored}`)) return null
+  if (!env && !stored) return NextResponse.json({ error: 'No scheduler secret is set up on this server (run db/pg-cron-fast-poll.sql, or set CRON_SECRET).' }, { status: 503 })
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 }
