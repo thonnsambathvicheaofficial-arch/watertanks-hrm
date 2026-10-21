@@ -19,6 +19,18 @@ async function dbSecret(name: string): Promise<string | null> {
   } catch { return null }   // table not created yet: fall back to the environment variable
 }
 
+// The push relay (see relay/) vouches for a reader's request with the header `x-relay-secret`. The secret is the row
+// named 'relay' in cron_secrets (or RELAY_SECRET); with neither set, every push request is refused.
+export async function relayRefusal(req: Request): Promise<NextResponse | null> {
+  const given = req.headers.get('x-relay-secret') || ''
+  const env = process.env.RELAY_SECRET
+  if (given && env && same(given, env)) return null
+  const stored = await dbSecret('relay')
+  if (given && stored && same(given, stored)) return null
+  if (!env && !stored) return new NextResponse('Push is not set up on this server.', { status: 503 })
+  return new NextResponse('Forbidden', { status: 403 })
+}
+
 export async function cronRefusal(req: Request, name = 'scheduler'): Promise<NextResponse | null> {
   const given = req.headers.get('authorization') || ''
   const env = process.env.CRON_SECRET

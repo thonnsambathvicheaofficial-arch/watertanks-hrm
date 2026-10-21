@@ -13,3 +13,4 @@ next-env.d.ts
 .vercel/
 .claude/
 .impeccable/
+relay/RELAY_SECRET.txt

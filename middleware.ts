@@ -3,7 +3,7 @@ import { SESSION_COOKIE, verifySession } from '@/lib/session'
 
 // Open without a session: the login page, the login endpoint, and the machine
 // endpoints the scheduler calls (each authenticates itself with CRON_SECRET).
-const OPEN = ['/login', '/api/login', '/api/cron/pull', '/api/cron/fast', '/no-access']
+const OPEN = ['/login', '/api/login', '/api/cron/pull', '/api/cron/fast', '/api/iclock', '/no-access']
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl

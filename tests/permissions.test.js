@@ -66,7 +66,7 @@ for (const f of walk(path.join(root, 'app/(app)')).filter(f => /actions\.ts$/.te
 
 // ── API routes ──
 console.log('api routes')
-const OPEN = new Set(['app/api/login/route.ts', 'app/api/logout/route.ts', 'app/api/cron/pull/route.ts', 'app/api/cron/fast/route.ts', 'app/(app)/payroll/open/route.ts'])
+const OPEN = new Set(['app/api/login/route.ts', 'app/api/logout/route.ts', 'app/api/cron/pull/route.ts', 'app/api/cron/fast/route.ts', 'app/api/iclock/[...path]/route.ts', 'app/(app)/payroll/open/route.ts'])
 for (const f of walk(path.join(root, 'app')).filter(f => /route\.ts$/.test(f))) {
   const name = rel(f)
   if (OPEN.has(name)) continue
@@ -79,8 +79,11 @@ ok(/if \(env &&/.test(auth) && /if \(stored &&/.test(auth), 'an unset secret (en
 ok(/cron_secrets/.test(auth) && /CRON_SECRET/.test(auth), 'the routes accept the database secret or the CRON_SECRET variable')
 // Every secret-protected scheduler route must also be open in the middleware, or the session check answers 401
 // "Not authenticated" before the route ever sees the secret (this hid the fast poll behind the login wall).
+const iclockRoute = read(path.join(root, 'app/api/iclock/[...path]/route.ts'))
+ok((iclockRoute.match(/relayRefusal\(req\)/g) || []).length === 2, 'the push receiver checks the relay secret on both GET and POST')
+ok(/Forbidden/.test(read(path.join(root, 'lib/cron-auth.ts'))) && /unknown device/.test(iclockRoute) && /404/.test(iclockRoute), 'it refuses a wrong secret and does not acknowledge scans from an unregistered reader')
 const mw = read(path.join(root, 'middleware.ts'))
-for (const route of ['/api/cron/pull', '/api/cron/fast']) ok(mw.includes(`'${route}'`), `the middleware lets the scheduler reach ${route} without a session`)
+for (const route of ['/api/cron/pull', '/api/cron/fast', '/api/iclock']) ok(mw.includes(`'${route}'`), `the middleware lets the scheduler reach ${route} without a session`)
 
 console.log(fails ? `\n${fails} FAILED` : '\nall passed')
 process.exit(fails ? 1 : 0)
