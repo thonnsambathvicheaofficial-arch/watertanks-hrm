@@ -107,5 +107,14 @@ ok(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(N.nowPP()), 'the Phnom Penh cloc
 ok(N.nowPP(new Date('2026-10-20T00:30:00Z')) === '2026-10-20 07:30:00', 'UTC 00:30 is 07:30 in Phnom Penh')
 ok(N.nowPP(new Date('2026-10-20T17:30:00Z')) === '2026-10-21 00:30:00', 'the date rolls over at Phnom Penh midnight, not UTC midnight')
 
+console.log('retrying scans a run did not finish')
+const nowMs = Date.parse('2026-10-21T10:05:00Z')
+const rowAt = (status, secsAgo) => ({ status, created_at: new Date(nowMs - secsAgo * 1000).toISOString() })
+ok(N.PENDING_RETRY_MS === 25000, 'a claimed scan is retried after 25 seconds, not a minute and a half')
+ok(!N.needsRetry(rowAt('pending', 5), nowMs) && !N.needsRetry(rowAt('pending', 20), nowMs), 'a scan another run is still sending is left alone (no double message)')
+ok(N.needsRetry(rowAt('pending', 30), nowMs) && N.needsRetry(rowAt('pending', 96), nowMs), 'a scan left pending past that is picked up by the next run')
+ok(N.needsRetry(rowAt('failed', 1), nowMs), 'a failed send is retried straight away')
+ok(!N.needsRetry(rowAt('sent', 600), nowMs) && !N.needsRetry(rowAt('skipped', 600), nowMs), 'sent and skipped scans are never retried')
+
 console.log(fails ? `\n${fails} FAILED` : '\nall passed')
 process.exit(fails ? 1 : 0)
