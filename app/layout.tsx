@@ -10,7 +10,7 @@ const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500'], var
 const khmer = Noto_Sans_Khmer({ subsets: ['khmer'], weight: ['400', '500', '600'], variable: '--font-khmer', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: { default: 'Song Fa HR', template: '%s · Song Fa HR' },
+  title: { default: 'Water Tanks HRM', template: '%s · Water Tanks HRM' },
   description: 'Attendance, roster, leave and payroll for Song Fa Water Tanks.',
   icons: { icon: '/logo.png' },
 }

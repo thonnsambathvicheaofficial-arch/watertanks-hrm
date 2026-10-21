@@ -121,7 +121,7 @@ export function Sidebar({ username, perms, roleLabel }: { username: string; perm
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col bg-steel lg:flex print:hidden">
         <div className="flex h-16 items-center gap-3 px-5">
           <Logo size={34} />
-          <span className="text-[14px] font-semibold leading-tight text-white">Song Fa<br /><span className="font-normal text-steel-soft">HR</span></span>
+          <span className="text-[14px] font-semibold leading-tight text-white">Water Tanks<br /><span className="font-normal text-steel-soft">HRM</span></span>
         </div>
         {nav}
         {footer}
@@ -129,7 +129,7 @@ export function Sidebar({ username, perms, roleLabel }: { username: string; perm
 
       {/* Mobile bar + drawer */}
       <div className="sticky top-0 z-30 flex h-14 items-center justify-between bg-steel px-4 lg:hidden print:hidden">
-        <div className="flex items-center gap-3"><Logo size={28} /><span className="text-[14px] font-semibold text-white">Song Fa HR</span></div>
+        <div className="flex items-center gap-3"><Logo size={28} /><span className="text-[14px] font-semibold text-white">Water Tanks HRM</span></div>
         <button onClick={() => setOpen(true)} aria-label="Open menu" className="-mr-2 grid h-11 w-11 place-items-center rounded text-steel-text hover:bg-steel-raised"><Menu size={20} /></button>
       </div>
       {open && (

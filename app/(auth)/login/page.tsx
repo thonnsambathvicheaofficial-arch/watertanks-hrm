@@ -10,12 +10,11 @@ export default function LoginPage() {
       <section className="flex flex-col justify-between bg-steel gap-8 px-8 py-6 text-steel-text lg:gap-0 lg:px-12 lg:py-12">
         <Logo size={48} />
         <div className="lg:py-0">
-          <h1 className="max-w-[16ch] text-[30px] font-semibold leading-[1.15] tracking-[-0.02em] lg:text-[38px]">Song Fa Water Tanks</h1>
-          <p className="mt-3 max-w-[42ch] text-[15px] text-steel-soft">
-            Attendance, roster, leave and payroll, read straight from the fingerprint readers on the factory floor.
-          </p>
+          <h1 className="max-w-[16ch] text-[30px] font-semibold leading-[1.15] tracking-[-0.02em] lg:text-[38px]">Water Tanks HRM</h1>
+          <p className="mt-3 max-w-[42ch] text-[15px] text-steel-soft">Attendance, roster, leave, payroll, and more.</p>
         </div>
-        <p className="hidden text-[13px] text-steel-soft lg:block">Phnom Penh · Mon to Sat</p>
+        {/* Keeps the heading block centred between the logo and the bottom edge on wide screens. */}
+        <div aria-hidden className="hidden lg:block" />
       </section>
       <section className="flex items-center px-8 py-10 lg:px-16">
         <div className="w-full max-w-[340px]">
