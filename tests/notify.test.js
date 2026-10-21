@@ -107,6 +107,21 @@ ok(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(N.nowPP()), 'the Phnom Penh cloc
 ok(N.nowPP(new Date('2026-10-20T00:30:00Z')) === '2026-10-20 07:30:00', 'UTC 00:30 is 07:30 in Phnom Penh')
 ok(N.nowPP(new Date('2026-10-20T17:30:00Z')) === '2026-10-21 00:30:00', 'the date rolls over at Phnom Penh midnight, not UTC midnight')
 
+console.log('in or out follows the report engine, so one missing scan cannot flip the labels')
+const dayRow = (pin, date, o) => [pin + '|' + date, { pin, date, in: null, out: null, outNextDay: false, ...o }]
+const eng = new Map([
+  dayRow('215', '2026-10-19', { in: '04:38' }),                  // no evening scan that day
+  dayRow('215', '2026-10-20', { out: '17:03' }),                 // no morning scan that day
+  dayRow('215', '2026-10-21', { in: '06:52', out: '17:03' }),
+  dayRow('9', '2026-10-20', { in: '19:00', out: '06:00', outNextDay: true }),   // night shift
+])
+ok(N.engineDirection('215', '2026-10-21 17:03:11', eng) === 'out', 'the 17:03 scan is a punch OUT (it was announced as "Punch in" after two earlier days were each missing a scan)')
+ok(N.engineDirection('215', '2026-10-21 06:52:00', eng) === 'in', 'the morning scan is a punch in')
+ok(N.engineDirection('215', '2026-10-20 17:03:11', eng) === 'out', 'a lone afternoon scan is a departure, as the reports treat it')
+ok(N.engineDirection('215', '2026-10-19 04:38:54', eng) === 'in', 'a day with only an arrival scan still reads in')
+ok(N.engineDirection('9', '2026-10-20 19:00:30', eng) === 'in' && N.engineDirection('9', '2026-10-21 06:00:12', eng) === 'out', 'a night shift: in this evening, out next morning')
+ok(N.engineDirection('215', '2026-10-21 12:30:00', eng) === null && N.engineDirection('777', '2026-10-21 06:52:00', eng) === null && N.engineDirection('215', '2026-10-21 06:52:00', null) === null, 'a scan the engine does not single out, an unknown person, or no engine rows give null (the caller falls back to ordering)')
+
 console.log('retrying scans a run did not finish')
 const nowMs = Date.parse('2026-10-21T10:05:00Z')
 const rowAt = (status, secsAgo) => ({ status, created_at: new Date(nowMs - secsAgo * 1000).toISOString() })
