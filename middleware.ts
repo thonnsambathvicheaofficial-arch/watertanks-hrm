@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { SESSION_COOKIE, verifySession } from '@/lib/session'
 
 // Open without a session: the login page, the login endpoint, and the machine
-// endpoint the scheduler calls (it authenticates itself with CRON_SECRET).
-const OPEN = ['/login', '/api/login', '/api/cron/pull', '/no-access']
+// endpoints the scheduler calls (each authenticates itself with CRON_SECRET).
+const OPEN = ['/login', '/api/login', '/api/cron/pull', '/api/cron/fast', '/no-access']
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl

@@ -75,6 +75,10 @@ for (const f of walk(path.join(root, 'app')).filter(f => /route\.ts$/.test(f))) 
 const cron = read(path.join(root, 'app/api/cron/pull/route.ts'))
 ok(/CRON_SECRET|authorization/i.test(cron), 'the cron route is protected by its own secret')
 ok(/CRON_SECRET/.test(read(path.join(root, 'app/api/cron/fast/route.ts'))), 'the fast-poll route is protected by its own secret')
+// Every secret-protected scheduler route must also be open in the middleware, or the session check answers 401
+// "Not authenticated" before the route ever sees the secret (this hid the fast poll behind the login wall).
+const mw = read(path.join(root, 'middleware.ts'))
+for (const route of ['/api/cron/pull', '/api/cron/fast']) ok(mw.includes(`'${route}'`), `the middleware lets the scheduler reach ${route} without a session`)
 
 console.log(fails ? `\n${fails} FAILED` : '\nall passed')
 process.exit(fails ? 1 : 0)
