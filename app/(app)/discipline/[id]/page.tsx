@@ -110,7 +110,7 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
                   </Field>
                   <Field label="Reason"><TextArea name="reason" defaultValue={v('reason', r.reason)} required maxLength={2000} /></Field>
                   <Field label="Salary deduction (USD, optional)"><Input name="deduction" defaultValue={v('deduction', r.deduction ? String(r.deduction) : '')} inputMode="decimal" /></Field>
-                  <Field label="Payroll month it comes out of"><Input type="month" name="payrollMonth" defaultValue={v('payrollMonth', payrollMonth)} /></Field>
+                  <Field label="Payroll month" hint="Empty means the month it happened."><Input type="month" name="payrollMonth" defaultValue={v('payrollMonth', payrollMonth)} /></Field>
                   <div><Button type="submit">Save changes</Button></div>
                 </form>
                 <form action={confirmRecord} className="mt-4 border-t border-line pt-4">

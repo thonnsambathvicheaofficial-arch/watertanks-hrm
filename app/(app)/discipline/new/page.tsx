@@ -50,7 +50,7 @@ export default async function NewRecordPage({ searchParams }: { searchParams: { 
           <legend className="px-1 text-[13px] font-medium">Salary deduction (optional)</legend>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Amount (USD)"><Input name="deduction" defaultValue={v('deduction')} inputMode="decimal" placeholder="Leave empty if none" /></Field>
-            <Field label="Payroll month it comes out of (default: the month it happened)"><Input type="month" name="payrollMonth" defaultValue={v('payrollMonth')} /></Field>
+            <Field label="Payroll month" hint="Empty means the month it happened."><Input type="month" name="payrollMonth" defaultValue={v('payrollMonth')} /></Field>
           </div>
         </fieldset>
         <Button type="submit" variant="primary">Save as draft</Button>
