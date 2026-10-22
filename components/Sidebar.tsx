@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Activity, Bell, Building2, CalendarDays, CalendarOff, ClipboardList, Clock, FileClock, Fingerprint, KeyRound, Landmark, LogOut, Menu, PartyPopper, Repeat, Scale, Settings2, ShieldCheck, Table2, Timer, Upload, Users, Wallet, X } from 'lucide-react'
+import { Activity, Bell, Building2, CalendarDays, CalendarOff, ClipboardList, Clock, FileClock, Fingerprint, KeyRound, Landmark, LogOut, Menu, PartyPopper, Repeat, Scale, Settings2, ShieldAlert, ShieldCheck, Table2, Timer, Upload, Users, Wallet, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from './Logo'
 
@@ -18,6 +18,7 @@ const NAV: Item[] = [
   { href: '/leave', label: 'Leave', icon: CalendarOff, perm: 'leave.view' },
   { href: '/staff', label: 'Staff', icon: Users, perm: 'staff.view' },
   { href: '/rotation', label: 'Rotation', icon: Repeat, perm: 'staff.view' },
+  { href: '/discipline', label: 'Discipline', icon: ShieldAlert, perm: 'discipline.view' },
 ]
 const PAY: Item[] = [
   { href: '/payroll', label: 'Payroll', icon: Wallet, perm: 'payroll.view' },

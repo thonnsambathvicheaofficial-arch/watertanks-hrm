@@ -82,6 +82,10 @@ ok(/cron_secrets/.test(auth) && /CRON_SECRET/.test(auth), 'the routes accept the
 const iclockRoute = read(path.join(root, 'app/api/iclock/[...path]/route.ts'))
 ok((iclockRoute.match(/relayRefusal\(req\)/g) || []).length === 2, 'the push receiver checks the relay secret on both GET and POST')
 ok(/Forbidden/.test(read(path.join(root, 'lib/cron-auth.ts'))) && /unknown device/.test(iclockRoute) && /404/.test(iclockRoute), 'it refuses a wrong secret and does not acknowledge scans from an unregistered reader')
+ok(/denyUnless\(req, 'discipline\.view'\)/.test(read(path.join(root, 'app/api/export/discipline/route.ts'))), 'the discipline export needs the discipline permission')
+const P0 = require('../lib/permissions.js')
+ok(P0.KEYS.includes('discipline.view') && P0.KEYS.includes('discipline.edit') && !P0.ROLE_TEMPLATES.some(t => ['Viewer', 'HR clerk', 'Payroll officer', 'Payroll approver'].includes(t.name) && t.perms.some(p => p.startsWith('discipline'))), 'discipline is its own permission, given to the HR manager template and no other')
+ok(P0.viewPermFor('/discipline/abc/letter') === 'discipline.view' && P0.editPermFor('/discipline/abc') === 'discipline.edit' && P0.viewPermFor('/discipline/new') === 'discipline.edit', 'the discipline pages need the discipline permissions, and the new-record page needs edit')
 const mw = read(path.join(root, 'middleware.ts'))
 for (const route of ['/api/cron/pull', '/api/cron/fast', '/api/iclock']) ok(mw.includes(`'${route}'`), `the middleware lets the scheduler reach ${route} without a session`)
 

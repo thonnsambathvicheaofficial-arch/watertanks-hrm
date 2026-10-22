@@ -10,8 +10,14 @@ import { StaffForm } from '../StaffForm'
 import { addAssignment, removeAssignment, renamePin, updateStaff } from '../actions'
 import { guard } from '@/lib/guard'
 import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
+import { DisciplineStatus } from '@/components/DisciplineBits'
+import { usd } from '@/lib/utils'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const disc = require('@/lib/discipline-store')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const D = require('@/lib/discipline')
 
 export const metadata: Metadata = { title: 'Staff member' }
 export const dynamic = 'force-dynamic'
@@ -24,6 +30,10 @@ export default async function StaffMemberPage({ params, searchParams }: { params
   const pin = decodeURIComponent(params.pin)
   const ready = await hr.available()
   const ext = await hr.extended()
+  // Discipline history, for people allowed to see it (it is sensitive: its own permission).
+  const showDiscipline = me.perms.includes('discipline.view') && (await disc.records.ready())
+  const discRecords: { id: string; occurredOn: string; kind: string; reason: string; deduction: number | null; status: string }[] = showDiscipline ? await disc.records.list({ pin }) : []
+  const ladder = D.ladder(discRecords)
   const [profile, shifts, departments, assignments, everyone] = await Promise.all([
     hr.staff.get(pin),
     ready ? hr.shifts.list() : [],
@@ -83,6 +93,40 @@ export default async function StaffMemberPage({ params, searchParams }: { params
             <Field label="Note"><Input name="note" defaultValue={ev('note')} /></Field>
             <Button type="submit" variant="primary">Add</Button>
           </form>
+        </section>
+      )}
+
+      {showDiscipline && (
+        <section className="mt-12 max-w-[820px] border-t border-line pt-6" aria-labelledby="disc-h">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 id="disc-h" className="text-[15px] font-semibold">Discipline</h2>
+            <div className="flex items-center gap-4 text-[13px]">
+              <Link href={`/discipline?q=${encodeURIComponent(pin)}&from=2000-01-01`} className="text-ink-soft underline decoration-line-strong hover:text-ink">In the register</Link>
+              {me.perms.includes('discipline.edit') && <Link href={`/discipline/new?pin=${encodeURIComponent(pin)}`} className="text-brand-deep underline underline-offset-2 hover:text-brand">Record warning</Link>}
+            </div>
+          </div>
+          <p className="mt-1 text-[13px] text-ink-soft">
+            {ladder.warnings} confirmed warning{ladder.warnings === 1 ? '' : 's'}{ladder.top ? `, highest: ${D.KINDS[ladder.top].label}` : ''}.{ladder.next ? ` The next step on the ladder would be a ${D.KINDS[ladder.next].label.toLowerCase()}.` : ladder.top ? ' This is the end of the ladder.' : ''}
+          </p>
+          <div className="mt-3">
+            <TableWrap>
+              <Table wide={false}>
+                <thead><tr><Th>Date</Th><Th>Type</Th><Th>Reason</Th><Th align="right">Deduction</Th><Th>Status</Th></tr></thead>
+                <tbody>
+                  {discRecords.length === 0 && <tr><td colSpan={5}><EmptyState title="Nothing on record" /></td></tr>}
+                  {[...discRecords].reverse().map(d => (
+                    <tr key={d.id}>
+                      <Td className="num whitespace-nowrap"><Link href={`/discipline/${d.id}`} className="text-brand-deep underline underline-offset-2 hover:text-brand">{d.occurredOn}</Link></Td>
+                      <Td className="whitespace-nowrap">{D.KINDS[d.kind].label}</Td>
+                      <Td className="max-w-[300px] truncate text-ink-soft">{d.reason}</Td>
+                      <Td align="right" className="whitespace-nowrap">{d.deduction ? usd(d.deduction) : ''}</Td>
+                      <Td><DisciplineStatus status={d.status} /></Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </TableWrap>
+          </div>
         </section>
       )}
 
