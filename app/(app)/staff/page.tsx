@@ -6,6 +6,7 @@ import { Button, EmptyState, Flash, Input, PageHeader } from '@/components/ui'
 import { DepartmentSelect, GroupSelect, cleanDepartment, inDepartment } from '@/components/StaffFilters'
 import { DAY_NAMES, to12h } from '@/lib/utils'
 import { guard } from '@/lib/guard'
+import { withReturn } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -27,6 +28,7 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
   const q = (searchParams.q || '').trim().toLowerCase()
   const group = searchParams.group || ''
   const department = cleanDepartment(searchParams.department, depts)
+  const here = `/staff${(() => { const p = new URLSearchParams(Object.entries({ q: searchParams.q || '', group, department: searchParams.department || '' }).filter(([, v]) => v) as [string, string][]).toString(); return p ? `?${p}` : '' })()}`
   const rows = all
     .filter(e => (!group || e.group === group) && inDepartment(department, e.departmentId) && (!q || e.pin.includes(q) || e.name.toLowerCase().includes(q) || (e.staffCode || '').toLowerCase().includes(q) || (e.nameKh || '').includes(q) || (e.position || '').toLowerCase().includes(q)))
     .sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
@@ -54,7 +56,7 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
               <tr key={e.pin}>
                 <Td className="num text-ink-soft">{e.pin}</Td>
                 {ext && <Td className="num whitespace-nowrap text-ink-soft">{e.staffCode}</Td>}
-                <Td className="font-medium"><Link href={`/staff/${encodeURIComponent(e.pin)}`} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{e.name || 'Unnamed'}</Link>{e.nameKh && <div lang="km" className="text-[13px] font-normal text-ink-soft">{e.nameKh}</div>}</Td>
+                <Td className="font-medium"><Link href={withReturn(`/staff/${encodeURIComponent(e.pin)}`, here)} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{e.name || 'Unnamed'}</Link>{e.nameKh && <div lang="km" className="text-[13px] font-normal text-ink-soft">{e.nameKh}</div>}</Td>
                 <Td className="text-ink-soft">{glabel(e.group)}</Td>
                 {ready && <Td className="text-ink-soft">{deptName[e.departmentId] || ''}</Td>}
                 {ready && <Td className="text-ink-soft"><span lang="km">{e.position}</span></Td>}

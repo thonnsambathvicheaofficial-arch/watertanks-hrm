@@ -5,6 +5,7 @@ import { Logo } from '@/components/Logo'
 import { PrintButton } from '@/components/PrintButton'
 import { MigrationNotice, PageHeader } from '@/components/ui'
 import { guard } from '@/lib/guard'
+import { withReturn } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { records } = require('@/lib/discipline-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic'
 type Person = { staffCode: string; name: string; nameKh: string; position: string; departmentName: string }
 
 // The letter to print and sign. English first, Khmer beneath. The Khmer wording is a draft for HR to confirm.
-export default async function LetterPage({ params }: { params: { id: string } }) {
+export default async function LetterPage({ params, searchParams }: { params: { id: string }; searchParams: { return?: string } }) {
   await guard()
   if (!(await records.ready())) return <><PageHeader title="Warning letter" /><MigrationNotice file="009_discipline.sql" /></>
   const r = await records.get(params.id)
@@ -35,7 +36,7 @@ export default async function LetterPage({ params }: { params: { id: string } })
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center gap-3 print:hidden">
-        <Link href={`/discipline/${r.id}`} className="touch-target text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to the record</Link>
+        <Link href={withReturn(`/discipline/${r.id}`, searchParams.return || '')} className="touch-target text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to the record</Link>
         <div className="ml-auto"><PrintButton label="Print letter" /></div>
       </div>
 

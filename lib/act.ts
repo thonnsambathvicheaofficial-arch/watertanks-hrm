@@ -1,8 +1,9 @@
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { SESSION_COOKIE, verifySession, type Session } from '@/lib/session'
 import { encodeEcho } from '@/lib/echo'
+import { keepFilters as keepFiltersFrom } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { UserError } = require('@/lib/hr-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -23,6 +24,9 @@ export async function requireSession() {
 }
 
 const withParam = (path: string, key: string, value: string) => `${path}${path.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}`
+
+// Keeps the page's filters on a save that lands back on the same page (see lib/return-to.ts).
+const keepFilters = (target: string) => keepFiltersFrom(target, headers().get('referer'), headers().get('host'))
 
 // "/settings/payroll" -> "payroll", "/payroll/2026-08" -> "payroll": the area an action belongs to, for the audit log.
 const areaOf = (path: string) => path.split('?')[0].split('/').filter(Boolean).filter(s => s !== 'settings')[0] || 'home'
@@ -46,7 +50,7 @@ export async function act(back: string, fn: (session: Session) => Promise<string
   const need = perm ?? P.editPermFor(back)
   if (!access.perms.includes(need)) {
     await audit.record({ actor: session.username, action: 'permission.denied', entity: areaOf(back), summary: `Tried to change something on ${back.split('?')[0]} without permission (${need})` })
-    redirect(withParam(back, 'error', 'You do not have permission to do that.'))
+    redirect(withParam(keepFilters(back), 'error', 'You do not have permission to do that.'))
   }
 
   const ctx = { actor: session.username, recorded: false }
@@ -59,6 +63,7 @@ export async function act(back: string, fn: (session: Session) => Promise<string
     await audit.record({ actor: session.username, action: 'action', entity: areaOf(back), summary: ok || 'Saved', details: { page: back.split('?')[0] } })
   }
   revalidatePath('/', 'layout')
-  if (error) redirect(form ? withParam(withParam(back, 'error', error), 'v', encodeEcho(form)) : withParam(back, 'error', error))
-  redirect(withParam(okPath || back, 'saved', ok || '1'))
+  const stay = keepFilters(back)
+  if (error) redirect(form ? withParam(withParam(stay, 'error', error), 'v', encodeEcho(form)) : withParam(stay, 'error', error))
+  redirect(withParam(okPath ? keepFilters(okPath) : stay, 'saved', ok || '1'))
 }

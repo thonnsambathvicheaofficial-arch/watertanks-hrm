@@ -10,6 +10,7 @@ import { decodeEcho, echoOne } from '@/lib/echo'
 import { MONTH_NAMES, usd } from '@/lib/utils'
 import { confirmRecord, discardRecord, issueLetter, markSigned, saveRecord, withdrawRecord } from '../actions'
 import { guard } from '@/lib/guard'
+import { safeReturn, withReturn } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { records } = require('@/lib/discipline-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -25,7 +26,7 @@ type Person = { staffCode: string; name: string; nameKh: string; position: strin
 
 const day = (iso: string | null) => (iso ? String(iso).slice(0, 10) : '')
 
-export default async function DisciplineRecordPage({ params, searchParams }: { params: { id: string }; searchParams: { error?: string; saved?: string; v?: string } }) {
+export default async function DisciplineRecordPage({ params, searchParams }: { params: { id: string }; searchParams: { error?: string; saved?: string; v?: string; return?: string } }) {
   const me = await guard()
   if (!(await records.ready())) return <><PageHeader title="Discipline" /><MigrationNotice file="009_discipline.sql" /></>
   const r: Rec | null = await records.get(params.id)
@@ -45,7 +46,7 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
     <>
       <PageHeader title={p.name} note={<>{D.KINDS[r.kind].label} · <span className="num">{r.occurredOn}</span></>}>
         <DisciplineStatus status={r.status} />
-        <Link href="/discipline" className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">All records</Link>
+        <Link href={safeReturn(searchParams.return) || '/discipline'} className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">{safeReturn(searchParams.return) ? 'Back' : 'All records'}</Link>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
       {!canEdit && <ReadOnlyNotice text="You can see this record but not change it." />}
@@ -83,7 +84,7 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
                   <tbody>
                     {others.map(o => (
                       <tr key={o.id} className={o.id === r.id ? 'bg-brand-wash/60' : undefined}>
-                        <Td className="num whitespace-nowrap"><Link href={`/discipline/${o.id}`} className="text-brand-deep underline underline-offset-2 hover:text-brand">{o.occurredOn}</Link></Td>
+                        <Td className="num whitespace-nowrap"><Link href={withReturn(`/discipline/${o.id}`, searchParams.return || '')} className="text-brand-deep underline underline-offset-2 hover:text-brand">{o.occurredOn}</Link></Td>
                         <Td className="whitespace-nowrap">{D.KINDS[o.kind].label}</Td>
                         <Td className="max-w-[260px] truncate text-ink-soft">{o.reason}</Td>
                         <Td><DisciplineStatus status={o.status} /></Td>
@@ -129,7 +130,7 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
                   <h2 id="letter-h" className="mb-1 text-[15px] font-semibold">Warning letter</h2>
                   <p className="mb-3 text-[13px] text-ink-soft">English and Khmer, ready to print and sign.</p>
                   {r.letterIssuedOn ? (
-                    <Link href={`/discipline/${r.id}/letter`} className="inline-flex h-9 items-center rounded border border-line-strong bg-raised px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-brand-wash">Open the letter to print</Link>
+                    <Link href={withReturn(`/discipline/${r.id}/letter`, searchParams.return || '')} className="inline-flex h-9 items-center rounded border border-line-strong bg-raised px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-brand-wash">Open the letter to print</Link>
                   ) : (
                     <form action={issueLetter}>{hidden}<Button type="submit" variant="primary">Issue warning letter</Button></form>
                   )}

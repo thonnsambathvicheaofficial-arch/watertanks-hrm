@@ -6,6 +6,7 @@ import { DepartmentSelect, GroupSelect, filterNote } from '@/components/StaffFil
 import { cn } from '@/lib/utils'
 import { LEGEND, cellStyle, type Cell } from '@/lib/roster-codes'
 import { guard } from '@/lib/guard'
+import { withReturn } from '@/lib/return-to'
 import { MonthNav } from '@/components/MonthNav'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { buildRoster } = require('@/lib/roster')
@@ -37,6 +38,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
     const p = new URLSearchParams(Object.entries({ month, group, department, view, ...over }).filter(([, v]) => v) as [string, string][])
     return `/roster?${p.toString()}`
   }
+  const here = href({})
   const exportQs = new URLSearchParams(Object.entries({ month, group, department }).filter(([, v]) => v) as [string, string][]).toString()
 
   return (
@@ -93,7 +95,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
                   return (
                     <td key={d.d} className="border-b border-line p-[2px]">
                       {me.perms.includes('attendance.edit') ? (
-                        <Link data-dense href={`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`} title={tip} aria-label={tip}
+                        <Link data-dense href={withReturn(`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`, here)} title={tip} aria-label={tip}
                           className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>
                         {label}
                       </Link>

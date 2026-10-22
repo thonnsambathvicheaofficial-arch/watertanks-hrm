@@ -9,6 +9,7 @@ import { profileFromEcho } from '../profileEcho'
 import { StaffForm } from '../StaffForm'
 import { addAssignment, removeAssignment, renamePin, updateStaff } from '../actions'
 import { guard } from '@/lib/guard'
+import { safeReturn, withReturn } from '@/lib/return-to'
 import { ReadOnlyNotice } from '@/components/ReadOnlyNotice'
 import { DisciplineStatus } from '@/components/DisciplineBits'
 import { usd } from '@/lib/utils'
@@ -25,8 +26,9 @@ export const dynamic = 'force-dynamic'
 type Shift = { id: string; name: string; start: string; end: string }
 type Asg = { id: string; shiftName: string; start: string; end: string; from: string; to: string | null; note: string }
 
-export default async function StaffMemberPage({ params, searchParams }: { params: { pin: string }; searchParams: { error?: string; saved?: string; v?: string } }) {
+export default async function StaffMemberPage({ params, searchParams }: { params: { pin: string }; searchParams: { error?: string; saved?: string; v?: string; return?: string } }) {
   const me = await guard()
+  const ret = safeReturn(searchParams.return)
   const pin = decodeURIComponent(params.pin)
   const ready = await hr.available()
   const ext = await hr.extended()
@@ -49,7 +51,7 @@ export default async function StaffMemberPage({ params, searchParams }: { params
   return (
     <>
       <PageHeader title={profile.name || `PIN ${pin}`} note={<>PIN <span className="num">{pin}</span></>}>
-        <Link href="/staff" className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">All staff</Link>
+        <Link href={ret || '/staff'} className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">{ret ? 'Back to the list' : 'All staff'}</Link>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
       {!me.perms.includes('staff.edit') && <ReadOnlyNotice />}
@@ -116,7 +118,7 @@ export default async function StaffMemberPage({ params, searchParams }: { params
                   {discRecords.length === 0 && <tr><td colSpan={5}><EmptyState title="Nothing on record" /></td></tr>}
                   {[...discRecords].reverse().map(d => (
                     <tr key={d.id}>
-                      <Td className="num whitespace-nowrap"><Link href={`/discipline/${d.id}`} className="text-brand-deep underline underline-offset-2 hover:text-brand">{d.occurredOn}</Link></Td>
+                      <Td className="num whitespace-nowrap"><Link href={withReturn(`/discipline/${d.id}`, `/staff/${encodeURIComponent(pin)}`)} className="text-brand-deep underline underline-offset-2 hover:text-brand">{d.occurredOn}</Link></Td>
                       <Td className="whitespace-nowrap">{D.KINDS[d.kind].label}</Td>
                       <Td className="max-w-[300px] truncate text-ink-soft">{d.reason}</Td>
                       <Td align="right" className="whitespace-nowrap">{d.deduction ? usd(d.deduction) : ''}</Td>

@@ -7,6 +7,7 @@ import { Button, EmptyState, Flash, Input, MigrationNotice, PageHeader, Select }
 import { DepartmentSelect, cleanDepartment, type Dept } from '@/components/StaffFilters'
 import { usd } from '@/lib/utils'
 import { guard } from '@/lib/guard'
+import { withReturn } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { records } = require('@/lib/discipline-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -83,7 +84,7 @@ export default async function DisciplinePage({ searchParams }: { searchParams: S
                 <tr key={r.id} className={r.status === 'withdrawn' ? 'text-ink-soft' : undefined}>
                   <Td className="num whitespace-nowrap">{r.occurredOn}</Td>
                   <Td className="min-w-[150px]">
-                    <Link href={`/discipline/${r.id}`} className="font-medium text-brand-deep underline underline-offset-2 hover:text-brand">{p.name}</Link>
+                    <Link href={withReturn(`/discipline/${r.id}`, `/discipline?${qs}`)} className="font-medium text-brand-deep underline underline-offset-2 hover:text-brand">{p.name}</Link>
                     {sub && <div className="text-[12px] text-ink-soft">{sub}</div>}
                   </Td>
                   <Td><span className="font-medium">{D.KINDS[r.kind].label}</span><div className="text-[12px] text-ink-soft">{D.KINDS[r.kind].kh}</div></Td>

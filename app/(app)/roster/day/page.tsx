@@ -8,6 +8,7 @@ import { decodeEcho, echoOne } from '@/lib/echo'
 import { dayName, to12h } from '@/lib/utils'
 import { removeOverride, saveOverride } from './actions'
 import { guard } from '@/lib/guard'
+import { safeReturn } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { reportData } = require('@/lib/report-data')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -26,7 +27,7 @@ const STATUS_OPTIONS = [
   { v: 'day_off', t: 'Day off', hint: 'Not expected to work.' },
 ]
 
-export default async function DayPage({ searchParams }: { searchParams: { pin?: string; date?: string; month?: string; error?: string; saved?: string; v?: string } }) {
+export default async function DayPage({ searchParams }: { searchParams: { pin?: string; date?: string; month?: string; return?: string; error?: string; saved?: string; v?: string } }) {
   await guard()
   const pin = searchParams.pin || '', date = searchParams.date || ''
   if (!pin || !/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound()
@@ -44,13 +45,14 @@ export default async function DayPage({ searchParams }: { searchParams: { pin?: 
   const ov: Ov | undefined = ovs[0]
   const deviceName: Record<string, string> = Object.fromEntries(devices.map((d: { id: string; name: string }) => [d.id, d.name]))
   const punches: { id: string; time: string; deviceId: string }[] = [...computed.punches].sort((a, b) => (a.time < b.time ? -1 : 1))
+  const ret = safeReturn(searchParams.return)
   const echo = decodeEcho(searchParams.v)
   const val = (k: string, fb: string | null | undefined) => echoOne(echo, k) ?? fb ?? ''
 
   return (
     <>
       <PageHeader title={now.name || `PIN ${pin}`} note={<>{dayName(date)}, <span className="num">{date}</span> · PIN <span className="num">{pin}</span></>}>
-        <Link href={`/roster?month=${month}`} className="touch-target text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to roster</Link>
+        <Link href={ret || `/roster?month=${month}`} className="touch-target text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to roster</Link>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
 
@@ -92,7 +94,7 @@ export default async function DayPage({ searchParams }: { searchParams: { pin?: 
           <h2 id="fix-h" className="mb-1 text-[15px] font-semibold">{ov ? 'Change the correction' : 'Correct this day'}</h2>
           <p className="mb-4 text-[13px] text-ink-soft">A correction replaces what the scans show for this day in every report. The scans themselves are never changed.</p>
           <form action={saveOverride} className="space-y-4">
-            <input type="hidden" name="pin" value={pin} /><input type="hidden" name="date" value={date} /><input type="hidden" name="month" value={month} />
+            <input type="hidden" name="pin" value={pin} /><input type="hidden" name="date" value={date} /><input type="hidden" name="month" value={month} /><input type="hidden" name="return" value={ret} />
             <input type="hidden" name="originalStatus" value={base.status} />
             <Field label="Status">
               <Select name="status" defaultValue={val('status', ov?.status || (base.status === 'absent' ? 'excused' : 'present'))}>
@@ -111,7 +113,7 @@ export default async function DayPage({ searchParams }: { searchParams: { pin?: 
           </form>
           {ov && (
             <form action={removeOverride} className="mt-6 border-t border-line pt-4">
-              <input type="hidden" name="pin" value={pin} /><input type="hidden" name="date" value={date} /><input type="hidden" name="month" value={month} />
+              <input type="hidden" name="pin" value={pin} /><input type="hidden" name="date" value={date} /><input type="hidden" name="month" value={month} /><input type="hidden" name="return" value={ret} />
               <ConfirmButton variant="danger" message="Remove this correction? The day will follow the scans again.">Remove correction</ConfirmButton>
             </form>
           )}
