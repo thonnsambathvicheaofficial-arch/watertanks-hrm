@@ -23,7 +23,7 @@ export default async function LetterPage({ params }: { params: { id: string } })
   if (!r) notFound()
   if (r.status !== 'confirmed') redirect(`/discipline/${r.id}`)
   const people: Record<string, Person> = await records.people()
-  const p = people[r.pin] || ({} as Person)
+  const p: Person = D.who(r, people)
   const L = D.letterModel(r, p)
   const line = (en: string, kh: string, value: string) => (
     <div className="grid grid-cols-[180px_minmax(0,1fr)] gap-3 border-b border-line py-1.5 last:border-b-0">
@@ -50,7 +50,7 @@ export default async function LetterPage({ params }: { params: { id: string } })
         <p className="mb-5 text-[18px] font-semibold text-ink-soft">{L.titleKh}</p>
 
         <dl className="mb-5">
-          {line('Staff ID', 'អត្តលេខ', p.staffCode || `PIN ${r.pin}`)}
+          {line('Staff ID', 'អត្តលេខ', p.staffCode || (r.pin ? `PIN ${r.pin}` : ''))}
           {line('Name', 'ឈ្មោះ', `${p.name || ''}${p.nameKh ? ` · ${p.nameKh}` : ''}`)}
           {line('Position', 'មុខតំណែង', p.position || '')}
           {line('Department', 'ផ្នែក', p.departmentName || '')}

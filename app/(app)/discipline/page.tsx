@@ -19,8 +19,8 @@ const { todayStr } = require('@/lib/report-data')
 export const metadata: Metadata = { title: 'Discipline' }
 export const dynamic = 'force-dynamic'
 
-type Rec = { id: string; pin: string; occurredOn: string; kind: string; reason: string; deduction: number | null; status: string; letterIssuedOn: string | null; acknowledgedOn: string | null }
-type Person = { staffCode: string; name: string; position: string; departmentName: string }
+type Rec = { id: string; pin: string | null; staffCode: string; staffName: string; position: string; department: string; source: string; occurredOn: string; kind: string; reason: string; deduction: number | null; status: string; letterIssuedOn: string | null; acknowledgedOn: string | null }
+type Person = { staffCode: string; name: string; nameKh: string; position: string; departmentName: string }
 type SP = { from?: string; to?: string; kind?: string; status?: string; department?: string; q?: string; error?: string; saved?: string }
 
 export default async function DisciplinePage({ searchParams }: { searchParams: SP }) {
@@ -77,12 +77,12 @@ export default async function DisciplinePage({ searchParams }: { searchParams: S
           <tbody>
             {rows.length === 0 && <tr><td colSpan={11}><EmptyState title="No records for these filters">{canEdit ? 'Use Record warning to add one, or widen the dates.' : 'Widen the dates or clear the filters.'}</EmptyState></td></tr>}
             {rows.map((r, i) => {
-              const p = people[r.pin] || ({} as Person)
+              const p: Person = D.who(r, people)
               return (
                 <tr key={r.id} className={r.status === 'withdrawn' ? 'text-ink-soft' : undefined}>
                   <Td align="right" className="text-ink-faint">{i + 1}</Td>
                   <Td className="num text-ink-soft">{p.staffCode}</Td>
-                  <Td className="font-medium"><Link href={`/discipline/${r.id}`} className="text-brand-deep underline underline-offset-2 hover:text-brand">{p.name || `PIN ${r.pin}`}</Link></Td>
+                  <Td className="font-medium"><Link href={`/discipline/${r.id}`} className="text-brand-deep underline underline-offset-2 hover:text-brand">{p.name}</Link></Td>
                   <Td className="text-ink-soft">{p.position}</Td>
                   <Td className="text-ink-soft">{p.departmentName}</Td>
                   <Td align="right" className="whitespace-nowrap">{r.deduction ? usd(r.deduction) : ''}</Td>
@@ -90,7 +90,7 @@ export default async function DisciplinePage({ searchParams }: { searchParams: S
                   <Td className="whitespace-nowrap"><span className="font-medium">{D.KINDS[r.kind].label}</span><div className="text-[12px] text-ink-soft">{D.KINDS[r.kind].kh}</div></Td>
                   <Td className="min-w-[220px] max-w-[360px]">{r.reason}</Td>
                   <Td><DisciplineStatus status={r.status} /></Td>
-                  <Td className="whitespace-nowrap text-[13px] text-ink-soft">{r.status !== 'confirmed' ? '' : r.acknowledgedOn ? 'Signed' : r.letterIssuedOn ? 'Issued' : 'Not issued'}</Td>
+                  <Td className="whitespace-nowrap text-[13px] text-ink-soft">{r.status !== 'confirmed' ? '' : r.acknowledgedOn ? 'Signed' : r.letterIssuedOn ? 'Issued' : r.source === 'import' ? '' : 'Not issued'}</Td>
                 </tr>
               )
             })}

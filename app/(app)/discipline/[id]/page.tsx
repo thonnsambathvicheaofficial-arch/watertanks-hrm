@@ -20,7 +20,7 @@ const { todayStr } = require('@/lib/report-data')
 export const metadata: Metadata = { title: 'Discipline record' }
 export const dynamic = 'force-dynamic'
 
-type Rec = { id: string; pin: string; occurredOn: string; kind: string; reason: string; deduction: number | null; payrollYear: number | null; payrollMonth: number | null; status: string; payrollEntryId: string | null; letterIssuedOn: string | null; letterIssuedBy: string; acknowledgedOn: string | null; createdBy: string; createdAt: string; confirmedBy: string; confirmedAt: string | null; withdrawnBy: string; withdrawnAt: string | null; withdrawnReason: string }
+type Rec = { id: string; pin: string | null; staffCode: string; staffName: string; position: string; department: string; source: string; occurredOn: string; kind: string; reason: string; deduction: number | null; payrollYear: number | null; payrollMonth: number | null; status: string; payrollEntryId: string | null; letterIssuedOn: string | null; letterIssuedBy: string; acknowledgedOn: string | null; createdBy: string; createdAt: string; confirmedBy: string; confirmedAt: string | null; withdrawnBy: string; withdrawnAt: string | null; withdrawnReason: string }
 type Person = { staffCode: string; name: string; nameKh: string; position: string; departmentName: string }
 
 const day = (iso: string | null) => (iso ? String(iso).slice(0, 10) : '')
@@ -30,8 +30,8 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
   if (!(await records.ready())) return <><PageHeader title="Discipline" /><MigrationNotice file="009_discipline.sql" /></>
   const r: Rec | null = await records.get(params.id)
   if (!r) notFound()
-  const [people, others]: [Record<string, Person>, Rec[]] = await Promise.all([records.people(), records.list({ pin: r.pin })])
-  const p = people[r.pin] || ({} as Person)
+  const [people, others]: [Record<string, Person>, Rec[]] = await Promise.all([records.people(), r.pin ? records.list({ pin: r.pin }) : Promise.resolve([r])])
+  const p: Person & { inStaffList: boolean } = D.who(r, people)
   const canEdit = me.perms.includes('discipline.edit')
   const echo = decodeEcho(searchParams.v)
   const v = (k: string, fb = '') => echoOne(echo, k) ?? fb
@@ -43,7 +43,7 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
 
   return (
     <>
-      <PageHeader title={p.name || `PIN ${r.pin}`} note={<>{D.KINDS[r.kind].label} · <span className="num">{r.occurredOn}</span></>}>
+      <PageHeader title={p.name} note={<>{D.KINDS[r.kind].label} · <span className="num">{r.occurredOn}</span></>}>
         <DisciplineStatus status={r.status} />
         <Link href="/discipline" className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">All records</Link>
       </PageHeader>
@@ -55,18 +55,18 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
           <section aria-labelledby="rec-h">
             <h2 id="rec-h" className="mb-2 text-[15px] font-semibold">The record</h2>
             <dl className="rounded-md border border-line bg-raised px-4 py-1 text-[14px]">
-              {row('Staff', <>{p.name}{p.nameKh && <span className="ml-2 font-normal text-ink-soft">{p.nameKh}</span>}<span className="num ml-2 font-normal text-ink-faint">PIN {r.pin}</span></>)}
+              {row('Staff', <>{p.name}{p.nameKh && <span className="ml-2 font-normal text-ink-soft">{p.nameKh}</span>}{r.pin && <span className="num ml-2 font-normal text-ink-faint">PIN {r.pin}</span>}{!p.inStaffList && <div className="text-[12px] font-normal text-ink-soft">Not in the staff list: the name, position and department are as written on the record.</div>}</>)}
               {row('Staff ID', <span className="num">{p.staffCode}</span>)}
               {row('Position', p.position)}
               {row('Department', p.departmentName)}
               {row('Occurrence date', <span className="num">{r.occurredOn}</span>)}
               {row('ការណែនាំ / ការព្រមាន', <>{D.KINDS[r.kind].label}<span className="ml-2 font-normal text-ink-soft">{D.KINDS[r.kind].kh}</span></>)}
               {row('Reason', <span className="whitespace-pre-wrap font-normal">{r.reason}</span>)}
-              {row('Salary deduction', r.deduction ? <>{usd(r.deduction)}<span className="ml-2 font-normal text-ink-soft">from {payrollLabel} payroll</span>{r.status === 'confirmed' && <div className="text-[12px] font-normal text-ink-soft">On Monthly items as a withholding</div>}</> : '')}
-              {row('Recorded', <span className="font-normal">{r.createdBy ? `by ${r.createdBy}` : ''} <span className="num text-ink-soft">{day(r.createdAt)}</span></span>)}
+              {row('Salary deduction', r.deduction ? <>{usd(r.deduction)}<span className="ml-2 font-normal text-ink-soft">{r.source === 'import' ? 'taken from pay before this system' : `from ${payrollLabel} payroll`}</span>{r.status === 'confirmed' && r.source !== 'import' && <div className="text-[12px] font-normal text-ink-soft">On Monthly items as a withholding</div>}</> : '')}
+              {row(r.source === 'import' ? 'Imported from the factory register' : 'Recorded', <span className="font-normal">{r.createdBy ? `by ${r.createdBy}` : ''} <span className="num text-ink-soft">{day(r.createdAt)}</span></span>)}
               {r.status !== 'draft' && row(r.status === 'withdrawn' ? 'Was confirmed' : 'Confirmed', <span className="font-normal">{r.confirmedBy ? `by ${r.confirmedBy}` : ''} <span className="num text-ink-soft">{day(r.confirmedAt)}</span></span>)}
               {r.status === 'withdrawn' && row('Withdrawn', <span className="font-normal">{r.withdrawnBy ? `by ${r.withdrawnBy} ` : ''}<span className="num text-ink-soft">{day(r.withdrawnAt)}</span><div>{r.withdrawnReason}</div></span>)}
-              {r.status === 'confirmed' && row('Warning letter', r.letterIssuedOn ? <span className="font-normal">Issued <span className="num">{r.letterIssuedOn}</span>{r.letterIssuedBy ? ` by ${r.letterIssuedBy}` : ''}</span> : 'Not issued yet')}
+              {r.status === 'confirmed' && r.kind !== 'noted' && row('Warning letter', r.letterIssuedOn ? <span className="font-normal">Issued <span className="num">{r.letterIssuedOn}</span>{r.letterIssuedBy ? ` by ${r.letterIssuedBy}` : ''}</span> : 'Not issued yet')}
               {r.status === 'confirmed' && row('Signed by the staff member', r.acknowledgedOn ? <span className="num font-normal">{r.acknowledgedOn}</span> : 'Not yet')}
             </dl>
           </section>
@@ -125,7 +125,7 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
 
             {r.status === 'confirmed' && (
               <>
-                <section aria-labelledby="letter-h" className="rounded-md border border-line bg-raised p-4">
+                {r.kind !== 'noted' && <section aria-labelledby="letter-h" className="rounded-md border border-line bg-raised p-4">
                   <h2 id="letter-h" className="mb-1 text-[15px] font-semibold">Warning letter</h2>
                   <p className="mb-3 text-[13px] text-ink-soft">English and Khmer, ready to print and sign.</p>
                   {r.letterIssuedOn ? (
@@ -140,7 +140,7 @@ export default async function DisciplineRecordPage({ params, searchParams }: { p
                       <div><Button type="submit">Mark as signed</Button></div>
                     </form>
                   )}
-                </section>
+                </section>}
                 <section aria-labelledby="wd-h" className="rounded-md border border-line bg-raised p-4">
                   <h2 id="wd-h" className="mb-1 text-[15px] font-semibold">Withdraw</h2>
                   <p className="mb-3 text-[13px] text-ink-soft">If this was a mistake or is cancelled. The record stays for the history{r.deduction ? ', and its salary deduction is removed from payroll' : ''}.</p>

@@ -40,7 +40,7 @@ export default async function NewRecordPage({ searchParams }: { searchParams: { 
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Occurrence date"><Input type="date" name="date" defaultValue={v('date', todayStr())} max={todayStr()} required /></Field>
           <Field label="Type (ការណែនាំ / ការព្រមាន)">
-            <Select name="kind" required defaultValue={v('kind', 'verbal')}>
+            <Select name="kind" required defaultValue={v('kind', 'verbal_guidance')}>
               {D.KIND_KEYS.map((k: string) => <option key={k} value={k}>{D.KINDS[k].label} · {D.KINDS[k].kh}</option>)}
             </Select>
           </Field>

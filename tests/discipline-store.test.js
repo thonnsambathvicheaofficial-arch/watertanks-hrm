@@ -15,6 +15,7 @@ function from(name) {
   const match = (r) => q.filters.every(f => f(r))
   const run = () => {
     if (q.op === 'insert') {
+      if (q.payload.import_key && rows.some(r => r.import_key === q.payload.import_key)) return { data: null, error: { code: '23505', message: 'duplicate' } }
       const row = { status: 'draft', payroll_entry_id: null, created_at: new Date().toISOString(), ...q.payload, id: 'rec-' + (++seq) }
       rows.push(row)
       return { data: q.one ? { id: row.id } : [{ id: row.id }], error: null }
@@ -33,6 +34,7 @@ function from(name) {
   const api = {
     select() { return api }, limit() { return api }, order() { return api }, gte() { return api }, lte() { return api },
     insert(p) { q.op = 'insert'; q.payload = p; return api }, update(p) { q.op = 'update'; q.payload = p; return api }, delete() { q.op = 'delete'; return api },
+    in(k, vs) { q.filters.push(r => vs.includes(r[k])); return api },
     eq(k, v) { q.filters.push(r => r[k] === v); return api },
     single() { q.one = true; return api }, maybeSingle() { q.maybe = true; return api },
     then(res, rej) { return Promise.resolve(run()).then(res, rej) },
@@ -41,7 +43,7 @@ function from(name) {
 }
 const stub = (rel, exports) => { const f = require.resolve(path.join('../lib', rel)); require.cache[f] = { id: f, filename: f, loaded: true, exports } }
 stub('supabase.js', { from })
-stub('hr-store.js', { UserError, available: async () => true, staff: { list: async () => [] }, departments: { list: async () => [] } })
+stub('hr-store.js', { UserError, available: async () => true, staff: { list: async () => [{ pin: '215', staffCode: 'SF0215', name: 'Ann', nameKh: '', position: 'Driver', departmentId: 'd1' }] }, departments: { list: async () => [{ id: 'd1', name: 'Delivery' }] } })
 stub('report-data.js', { todayStr: () => '2026-10-21' })
 stub('payroll-store.js', {
   ready: async () => true,
@@ -63,6 +65,9 @@ const base = { pin: '215', occurredOn: '2026-10-14', kind: 'verbal', reason: 'La
   const a = await records.add(base)
   ok(row(a).status === 'draft' && row(a).deduction === null && state.entries.length === 0, 'it saves as a draft and nothing reaches payroll')
   ok(await rejects(records.add({ ...base, reason: '' }), /reason/), 'the same checks as the form apply')
+
+  ok(row(a).staff_code === 'SF0215' && row(a).staff_name === 'Ann' && row(a).position === 'Driver' && row(a).department === 'Delivery', 'the record keeps a snapshot of who the person was')
+  ok(await rejects(records.add({ ...base, pin: '999' }), /no longer exists/), 'a person who is not in the staff list cannot get a new record')
 
   console.log('confirming without a deduction')
   await records.confirm(a, 'hr')
@@ -89,6 +94,10 @@ const base = { pin: '215', occurredOn: '2026-10-14', kind: 'verbal', reason: 'La
   ok(row(b).acknowledged_on === '2026-10-20', 'the signing is recorded')
   const draft = await records.add(base)
   ok(await rejects(records.issueLetter(draft, 'hr'), /Confirm the record/) && await rejects(records.acknowledge(draft), /confirmed/), 'a draft has no letter and cannot be marked signed')
+
+  const note = await records.add({ ...base, kind: 'noted' })
+  await records.confirm(note, 'hr')
+  ok(await rejects(records.issueLetter(note, 'hr'), /no letter/), 'a note with no action has no letter')
 
   console.log('withdrawing')
   ok(await rejects(records.withdraw(b, { by: 'hr' }), /Say why/), 'a withdrawal needs a reason')
@@ -119,6 +128,19 @@ const base = { pin: '215', occurredOn: '2026-10-14', kind: 'verbal', reason: 'La
   ok(row(f).kind === 'final' && row(f).reason === 'Edited' && row(f).occurred_on === '2026-10-15', 'a draft can be edited')
   await records.discard(f)
   ok(!row(f), 'a draft can be discarded')
+
+  console.log("importing the factory's register")
+  const keys = ['k1', 'k2']
+  const entriesBefore = state.entries.length
+  await records.importOne({ pin: '215', staffCode: 'SF0215', staffName: 'Ann', occurredOn: '2025-05-01', kind: 'verbal_guidance', reason: 'x', deduction: 5, importKey: 'k1' }, 'hr')
+  await records.importOne({ pin: null, staffCode: 'SF0149', staffName: 'ឈិន បារាំង', position: 'P', department: 'D', occurredOn: '2025-06-02', kind: 'noted', reason: 'y', deduction: null, importKey: 'k2' }, 'hr')
+  const i1 = tables.discipline_records.find(r => r.import_key === 'k1'), i2 = tables.discipline_records.find(r => r.import_key === 'k2')
+  ok(i1.status === 'confirmed' && i1.source === 'import' && i1.payroll_year === 2025 && i1.payroll_month === 5 && i1.deduction === 5 && state.entries.length === entriesBefore, 'an imported row is confirmed history and its deduction never reaches payroll')
+  ok(i2.pin === null && i2.staff_name === 'ឈិន បារាំង' && i2.deduction === null && i2.payroll_year === null, 'someone not in the staff list is kept by name, with no pin')
+  ok(await rejects(records.importOne({ pin: '215', occurredOn: '2025-05-01', kind: 'verbal_guidance', reason: 'x', importKey: 'k1' }, 'hr'), /already imported/), 'the same row cannot be imported twice')
+  ok(await rejects(records.importOne({ pin: null, staffName: '', occurredOn: '2025-05-01', kind: 'verbal', reason: 'x', importKey: 'k3' }, 'hr'), /no staff member/) && await rejects(records.importOne({ pin: '215', occurredOn: '2025-05-01', kind: 'nope', reason: 'x', importKey: 'k4' }, 'hr'), /Unknown type/), 'a row with no person or an unknown type is refused')
+  const saved = await records.importKeysSaved(['k1', 'k2', 'k9'])
+  ok(saved.has('k1') && saved.has('k2') && !saved.has('k9') && (await records.importKeysSaved([])).size === 0, 'it can tell which rows are already saved')
 
   console.log(fails ? `\n${fails} FAILED` : '\nall passed')
   process.exit(fails ? 1 : 0)

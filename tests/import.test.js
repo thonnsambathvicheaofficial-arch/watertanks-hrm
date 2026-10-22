@@ -32,6 +32,9 @@ stub('lib/leave-store.js', {
 stub('lib/payroll-store.js', { structure: { list: async () => ({ 1: { pin: '1', salary: 200, taxResident: true, taxExempt: false, nssfExempt: false, dependents: 0, paymentMethod: 'cash', bankName: '', bankAccount: '' } }), saveMany: async () => 0 } })
 stub('lib/store.js', { overrides: { query: async () => [{ pin: '1', date: '2026-10-02', status: 'present', note: 'forgot', timeIn: '07:00:00', timeOut: '16:00:00' }] } })
 
+const savedKeys = new Set(), imported = []
+stub('lib/discipline-store.js', { records: { ready: async () => true, importKeysSaved: async (keys) => new Set(keys.filter(k => savedKeys.has(k))), importOne: async (d) => { imported.push(d) } } })
+
 const imp = require('../lib/import.js')
 const book = (rows) => XLSX.write({ SheetNames: ['S'], Sheets: { S: XLSX.utils.aoa_to_sheet(rows) } }, { type: 'buffer', bookType: 'xlsx' })
 const serial = (ymd) => (Date.UTC(+ymd.slice(0, 4), +ymd.slice(5, 7) - 1, +ymd.slice(8)) - Date.UTC(1899, 11, 30)) / 86400000
@@ -142,6 +145,33 @@ const rejects = async (fn) => { try { await fn(); return null } catch (e) { retu
   ok(p[1].status === 'new' && p[1].data.status === 'day_off', 'corrections: "Day off" becomes day_off')
   ok([2, 3, 4, 5].every(i => p[i].status === 'error'), 'corrections: missing note, unknown status, times on a non-present day, half a time pair are all errors')
   ok(p[6].status === 'new', 'corrections: the same date for a different person is separate')
+
+  console.log('discipline register')
+  const Dsc = require('../lib/discipline.js')
+  const head = ['No', 'Staff ID', 'Name', 'Position', 'Department', 'Amount of salary deduction', 'Occurrence date', 'ការណែនាំ/ការព្រមាន', 'Reason']
+  const dRows = [['Staff discipline register'], head,
+    [1, 'SF0001', 'Sok Dara', 'Operator', 'Production', ' $5.00 ', serial('2026-08-14'), 'ណែនាំផ្ទាល់មាត់', 'Late'],
+    [2, 'SF0149', 'ឈិន បារាំង', 'Trailer driver', 'ដឹកជញ្ជូន', ' $-   ', serial('2026-08-15'), 'លិខិតព្រមាន', 'ប្រេះកញ្ចក់'],
+    [3, '', '', '', '', '', '', '', ''],
+    [4, 'SF0001', 'Sok Dara', 'Operator', 'Production', 'paid', serial('2026-08-16'), 'N/A', 'Damaged'],
+    [5, 'SF0001', 'Sok Dara', 'Operator', 'Production', '', serial('2026-08-17'), 'mystery', 'x'],
+    [6, 'SF0001', 'Sok Dara', 'Operator', 'Production', '', serial('2026-08-14'), 'ណែនាំផ្ទាល់មាត់', 'Late'],
+    [7, 'SF0001', 'Sok Dara', 'Operator', 'Production', 'five', serial('2026-08-18'), 'ណែនាំផ្ទាល់មាត់', 'Late again'],
+    [8, 'SF0001', 'Sok Dara', 'Operator', 'Production', '', serial('2099-01-01'), 'ណែនាំផ្ទាល់មាត់', 'Future']]
+  p = await run('discipline', dRows)
+  ok(p.length === 7, 'discipline: the heading row is found below a title and the blank numbered row is skipped')
+  ok(p[0].status === 'new' && p[0].data.pin === '1' && p[0].data.kind === 'verbal_guidance' && p[0].data.deduction === 5 && p[0].data.occurredOn === '2026-08-14', 'discipline: Staff ID matches the staff list, Khmer type and dollar amount are read')
+  ok(p[1].status === 'new' && p[1].data.pin === null && p[1].data.staffName === 'ឈិន បារាំង' && p[1].data.kind === 'warning_letter' && p[1].data.deduction === null && p[1].changes.some(c => /Not in the staff list/.test(c.to)), 'discipline: someone not in the staff list is kept by name')
+  ok(p[2].status === 'new' && p[2].data.kind === 'noted' && p[2].data.deduction === null && p[2].changes.some(c => /paid/.test(c.to)), 'discipline: N/A is a note, and "paid" is flagged instead of treated as money')
+  ok(p[3].status === 'error' && /not one the register knows/.test(p[3].message), 'discipline: an unknown type is an error, never guessed')
+  ok(p[4].status === 'error' && /repeats line/.test(p[4].message), 'discipline: a repeated row is an error')
+  ok(p[5].status === 'error' && /not a number/.test(p[5].message), 'discipline: a bad amount is an error')
+  ok(p[6].status === 'error' && /future/.test(p[6].message), 'discipline: a future date is an error')
+  savedKeys.add(p[0].data.importKey)
+  p = await run('discipline', dRows)
+  ok(p[0].status === 'same' && p[1].status === 'new', 'discipline: a row already saved shows as no change')
+  const res = await imp.apply('discipline', (await imp.parse('discipline', book(dRows))).rows, 'hr')
+  ok(res.added === 2 && res.same === 1 && res.skipped === 4 && res.failed.length === 0 && imported.length === 2 && imported.every(d => d.importKey), 'discipline: apply saves only the new rows, leaves saved and error rows alone')
 
   console.log(fails ? `\n${fails} FAILED` : '\nall passed')
   process.exit(fails ? 1 : 0)
