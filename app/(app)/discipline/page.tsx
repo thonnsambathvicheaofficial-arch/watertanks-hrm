@@ -55,42 +55,41 @@ export default async function DisciplinePage({ searchParams }: { searchParams: S
         <div className="w-[150px]"><Input type="date" name="from" defaultValue={from} aria-label="From" /></div>
         <div className="w-[150px]"><Input type="date" name="to" defaultValue={to} aria-label="To" /></div>
         <div className="w-[190px]"><DepartmentSelect value={department} departments={depts} /></div>
-        <div className="w-[210px]">
+        <div className="w-[180px]">
           <Select name="kind" defaultValue={kind} aria-label="Type"><option value="">All types</option>{D.KIND_KEYS.map((k: string) => <option key={k} value={k}>{D.KINDS[k].label}</option>)}</Select>
         </div>
-        <div className="w-[150px]">
+        <div className="w-[140px]">
           <Select name="status" defaultValue={status} aria-label="Status"><option value="">All statuses</option>{Object.entries(D.STATUSES).map(([k, l]) => <option key={k} value={k}>{l as string}</option>)}</Select>
         </div>
-        <div className="w-[200px]"><Input name="q" defaultValue={q} placeholder="Name, PIN or staff ID" aria-label="Search" /></div>
+        <div className="w-[180px]"><Input name="q" defaultValue={q} placeholder="Name, PIN or staff ID" aria-label="Search" /></div>
         <Button type="submit">Filter</Button>
         {(department || kind || status || q || searchParams.from || searchParams.to) && <Link href="/discipline" className="touch-target text-[13px] text-ink-soft underline-offset-2 hover:text-ink hover:underline">Clear</Link>}
       </form>
 
       <TableWrap>
-        <Table>
+        <Table wide={false}>
           <thead>
             <tr>
-              <Th align="right">No</Th><Th>Staff ID</Th><Th>Name</Th><Th>Position</Th><Th>Department</Th>
-              <Th align="right">Salary deduction (USD)</Th><Th>Occurrence date</Th><Th>ការណែនាំ / ការព្រមាន</Th><Th>Reason</Th><Th>Status</Th><Th>Letter</Th>
+              <Th>Occurrence date</Th><Th>Staff</Th><Th>ការណែនាំ / ការព្រមាន</Th><Th align="right">Deduction (USD)</Th><Th>Reason</Th><Th>Status</Th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={11}><EmptyState title="No records for these filters">{canEdit ? 'Use Record warning to add one, or widen the dates.' : 'Widen the dates or clear the filters.'}</EmptyState></td></tr>}
-            {rows.map((r, i) => {
+            {rows.length === 0 && <tr><td colSpan={6}><EmptyState title="No records for these filters">{canEdit ? 'Use Record warning to add one, or widen the dates.' : 'Widen the dates or clear the filters.'}</EmptyState></td></tr>}
+            {rows.map(r => {
               const p: Person = D.who(r, people)
+              const letter = r.status !== 'confirmed' || r.kind === 'noted' ? '' : r.acknowledgedOn ? 'Letter signed' : r.letterIssuedOn ? 'Letter issued' : r.source === 'import' ? '' : 'Letter not issued'
+              const sub = [p.staffCode, p.position, p.departmentName].filter(Boolean).join(' · ')
               return (
                 <tr key={r.id} className={r.status === 'withdrawn' ? 'text-ink-soft' : undefined}>
-                  <Td align="right" className="text-ink-faint">{i + 1}</Td>
-                  <Td className="num text-ink-soft">{p.staffCode}</Td>
-                  <Td className="font-medium"><Link href={`/discipline/${r.id}`} className="text-brand-deep underline underline-offset-2 hover:text-brand">{p.name}</Link></Td>
-                  <Td className="text-ink-soft">{p.position}</Td>
-                  <Td className="text-ink-soft">{p.departmentName}</Td>
-                  <Td align="right" className="whitespace-nowrap">{r.deduction ? usd(r.deduction) : ''}</Td>
                   <Td className="num whitespace-nowrap">{r.occurredOn}</Td>
-                  <Td className="whitespace-nowrap"><span className="font-medium">{D.KINDS[r.kind].label}</span><div className="text-[12px] text-ink-soft">{D.KINDS[r.kind].kh}</div></Td>
-                  <Td className="min-w-[220px] max-w-[360px]">{r.reason}</Td>
-                  <Td><DisciplineStatus status={r.status} /></Td>
-                  <Td className="whitespace-nowrap text-[13px] text-ink-soft">{r.status !== 'confirmed' ? '' : r.acknowledgedOn ? 'Signed' : r.letterIssuedOn ? 'Issued' : r.source === 'import' ? '' : 'Not issued'}</Td>
+                  <Td className="min-w-[150px]">
+                    <Link href={`/discipline/${r.id}`} className="font-medium text-brand-deep underline underline-offset-2 hover:text-brand">{p.name}</Link>
+                    {sub && <div className="text-[12px] text-ink-soft">{sub}</div>}
+                  </Td>
+                  <Td><span className="font-medium">{D.KINDS[r.kind].label}</span><div className="text-[12px] text-ink-soft">{D.KINDS[r.kind].kh}</div></Td>
+                  <Td align="right" className="whitespace-nowrap">{r.deduction ? usd(r.deduction) : ''}</Td>
+                  <Td className="min-w-[200px]">{r.reason}</Td>
+                  <Td><DisciplineStatus status={r.status} />{letter && <div className="mt-1 text-[12px] text-ink-soft">{letter}</div>}</Td>
                 </tr>
               )
             })}
