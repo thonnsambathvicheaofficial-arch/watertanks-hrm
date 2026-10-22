@@ -23,7 +23,11 @@ export async function requireSession() {
   return s
 }
 
-const withParam = (path: string, key: string, value: string) => `${path}${path.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}`
+// Adds ?key=value (or &key=value) to an address, keeping a #anchor at the very end where the browser reads it.
+const withParam = (path: string, key: string, value: string) => {
+  const i = path.indexOf('#'), base = i < 0 ? path : path.slice(0, i), hash = i < 0 ? '' : path.slice(i)
+  return `${base}${base.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}${hash}`
+}
 
 // Keeps the page's filters on a save that lands back on the same page (see lib/return-to.ts).
 const keepFilters = (target: string) => keepFiltersFrom(target, headers().get('referer'), headers().get('host'))

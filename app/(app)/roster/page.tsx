@@ -93,7 +93,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
                   const label = view === 'hours' && c.hours > 0 ? String(c.hours) : s.code
                   const tip = `${r.name}, ${d.date}: ${c.status.replace('_', ' ')}${c.in ? `, ${c.in} to ${c.out ?? '?'}` : ''}${c.hours ? `, ${c.hours} h` : ''}${c.overridden ? ' (corrected by HR)' : ''}${c.note ? ` · ${c.note}` : ''}`
                   return (
-                    <td key={d.d} className="border-b border-line p-[2px]">
+                    <td key={d.d} id={`c-${r.pin}-${d.date}`} className="scroll-ml-64 scroll-mt-32 border-b border-line p-[2px]">
                       {me.perms.includes('attendance.edit') ? (
                         <Link data-dense href={withReturn(`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`, here)} title={tip} aria-label={tip}
                           className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>

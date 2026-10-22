@@ -16,10 +16,10 @@ export async function saveOverride(f: FormData) {
   await act(here, async (s) => {
     await lv.overrides.set({ pin, date, status: f.get('status'), note: f.get('note'), timeIn: f.get('timeIn'), timeOut: f.get('timeOut'), by: s.username, originalStatus: f.get('originalStatus') })
     return 'Correction saved.'
-  }, list, f)
+  }, `${list}#c-${pin}-${date}`, f)
 }
 
 export async function removeOverride(f: FormData) {
   const { pin, date, here, list } = fields(f)
-  await act(here, async () => { await lv.overrides.remove(pin, date); return 'Correction removed. The day follows the scans again.' }, list)
+  await act(here, async () => { await lv.overrides.remove(pin, date); return 'Correction removed. The day follows the scans again.' }, `${list}#c-${pin}-${date}`)
 }

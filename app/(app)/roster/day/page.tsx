@@ -52,7 +52,7 @@ export default async function DayPage({ searchParams }: { searchParams: { pin?: 
   return (
     <>
       <PageHeader title={now.name || `PIN ${pin}`} note={<>{dayName(date)}, <span className="num">{date}</span> · PIN <span className="num">{pin}</span></>}>
-        <Link href={ret || `/roster?month=${month}`} className="touch-target text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to roster</Link>
+        <Link href={`${ret || `/roster?month=${month}`}#c-${pin}-${date}`} className="touch-target text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to roster</Link>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
 
