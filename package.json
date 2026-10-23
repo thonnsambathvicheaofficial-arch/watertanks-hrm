@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js && node tests/permissions.test.js && node tests/import.test.js && node tests/notify.test.js && node tests/zkfast.test.js && node tests/staff-filter.test.js && node tests/live-summary.test.js && node tests/calendar.test.js && node tests/iclock.test.js && node tests/relay.test.js && node tests/discipline.test.js && node tests/discipline-store.test.js && node tests/return-to.test.js && node tests/validate.test.js && node tests/payroll-guard.test.js && node tests/leave-note.test.js && node tests/timesheet-leave.test.js && node tests/report-notes.test.js && node tests/date-pick.test.js",
+    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js && node tests/permissions.test.js && node tests/import.test.js && node tests/notify.test.js && node tests/zkfast.test.js && node tests/staff-filter.test.js && node tests/live-summary.test.js && node tests/calendar.test.js && node tests/iclock.test.js && node tests/relay.test.js && node tests/discipline.test.js && node tests/discipline-store.test.js && node tests/return-to.test.js && node tests/validate.test.js && node tests/payroll-guard.test.js && node tests/leave-note.test.js && node tests/timesheet-leave.test.js && node tests/report-notes.test.js && node tests/date-pick.test.js && node tests/leave-note-parse.test.js && node tests/notify-updates.test.js",
     "live": "node scripts/live-poll.js"
   },
   "engines": {
