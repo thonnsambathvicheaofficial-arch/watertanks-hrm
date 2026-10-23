@@ -93,7 +93,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
                   if (!c) return <td key={d.d} className="border-b border-line p-0" />
                   const s = cellStyle(c)
                   const label = view === 'hours' && c.hours > 0 ? String(c.hours) : s.code
-                  const tip = `${r.name}, ${d.date}: ${c.status.replace('_', ' ')}${c.in ? `, ${c.in} to ${c.out ?? '?'}` : ''}${c.hours ? `, ${c.hours} h` : ''}${c.overridden ? ' (corrected by HR)' : ''}${c.note ? ` · ${c.note}` : ''}`
+                  const tip = `${r.name}, ${d.date}: ${c.status.replace('_', ' ')}${c.in ? `, ${c.in} to ${c.out ?? '?'}` : ''}${c.hours ? `, ${c.hours} h` : ''}${c.overridden ? ' (corrected by HR)' : ''}${c.rosterNote ? ` · Roster note: ${c.rosterNote}` : ''}${c.leaveReason ? ` · Leave: ${c.leaveReason}` : ''}${!c.rosterNote && !c.leaveReason && c.note ? ` · ${c.note}` : ''}`
                   return (
                     <td key={d.d} id={`c-${r.pin}-${d.date}`} className="scroll-ml-64 scroll-mt-32 border-b border-line p-[2px]">
                       {me.perms.includes('attendance.edit') ? (

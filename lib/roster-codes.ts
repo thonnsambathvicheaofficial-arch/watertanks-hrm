@@ -1,7 +1,7 @@
 // How a day is shown on the roster grid. One place, so the grid, legend and
 // exports agree. Colours come from the status tokens in globals.css.
 export interface Cell {
-  status: string; hours: number; in: string | null; out: string | null; note?: string | null
+  status: string; hours: number; in: string | null; out: string | null; note?: string | null; rosterNote?: string; leaveReason?: string
   overridden?: boolean; minutesLate?: number; leaveCode?: string; leaveDays?: number; holiday?: string
 }
 

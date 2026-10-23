@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: 'Reports' }
 export const dynamic = 'force-dynamic'
 
 type SP = { from?: string; to?: string; pin?: string; group?: string; department?: string; deviceId?: string; view?: string }
-type Daily = { date: string; pin: string; name: string; group: string | null; status: string; in: string | null; out: string | null; hours: number; punches: number; minutesLate: number; earlyLeave: boolean; note?: string }
+type Daily = { date: string; pin: string; name: string; group: string | null; status: string; in: string | null; out: string | null; hours: number; punches: number; minutesLate: number; earlyLeave: boolean; note?: string; rosterNote?: string; leaveReason?: string }
 type Punch = { pin: string; time: string; deviceId?: string | null; source?: string | null; verify?: number | null }
 type Summary = { pin: string; name: string; group: string | null; days: number; hours: number; late: number; minLate: number; early: number; absent: number; dayOff: number; leave: number; excused: number }
 
@@ -79,10 +79,10 @@ function DailyTable({ rows, deptOf }: { rows: Daily[]; deptOf: DeptOf }) {
     <TableWrap>
       <Table>
         <thead>
-          <tr><Th>Date</Th><Th>PIN</Th><Th>Name</Th><Th>Group</Th>{deptOf && <Th>Department</Th>}<Th>Status</Th><Th>In</Th><Th>Out</Th><Th align="right">Hours</Th><Th align="right">Punches</Th><Th align="right">Min late</Th><Th>Note</Th></tr>
+          <tr><Th>Date</Th><Th>PIN</Th><Th>Name</Th><Th>Group</Th>{deptOf && <Th>Department</Th>}<Th>Status</Th><Th>In</Th><Th>Out</Th><Th align="right">Hours</Th><Th align="right">Punches</Th><Th align="right">Min late</Th><Th>Roster note</Th><Th>Leave reason</Th></tr>
         </thead>
         <tbody>
-          {rows.length === 0 && <tr><td colSpan={12}><EmptyState title="No rows for these filters">Widen the date range or clear the PIN, group and department filters.</EmptyState></td></tr>}
+          {rows.length === 0 && <tr><td colSpan={13}><EmptyState title="No rows for these filters">Widen the date range or clear the PIN, group and department filters.</EmptyState></td></tr>}
           {rows.map(r => (
             <tr key={r.pin + r.date}>
               <Td className="whitespace-nowrap"><span className="num">{r.date}</span> <span className="text-ink-faint">{dayName(r.date).slice(0, 3)}</span></Td>
@@ -96,7 +96,8 @@ function DailyTable({ rows, deptOf }: { rows: Daily[]; deptOf: DeptOf }) {
               <Td align="right">{r.hours || ''}</Td>
               <Td align="right">{r.punches || ''}</Td>
               <Td align="right">{r.minutesLate || ''}</Td>
-              <Td className="min-w-[160px] max-w-[320px] text-ink-soft">{r.note}</Td>
+              <Td className="min-w-[140px] max-w-[280px] text-ink-soft">{r.rosterNote}</Td>
+              <Td className="min-w-[140px] max-w-[280px] text-ink-soft">{r.leaveReason}</Td>
             </tr>
           ))}
         </tbody>
