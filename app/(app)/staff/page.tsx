@@ -6,6 +6,8 @@ import { Button, EmptyState, Flash, Input, PageHeader } from '@/components/ui'
 import { DepartmentSelect, GroupSelect, cleanDepartment, inDepartment } from '@/components/StaffFilters'
 import { DAY_NAMES, to12h } from '@/lib/utils'
 import { guard } from '@/lib/guard'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { matchesSearch } = require('@/lib/staff-filter')
 import { withReturn } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
@@ -30,7 +32,7 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
   const department = cleanDepartment(searchParams.department, depts)
   const here = `/staff${(() => { const p = new URLSearchParams(Object.entries({ q: searchParams.q || '', group, department: searchParams.department || '' }).filter(([, v]) => v) as [string, string][]).toString(); return p ? `?${p}` : '' })()}`
   const rows = all
-    .filter(e => (!group || e.group === group) && inDepartment(department, e.departmentId) && (!q || e.pin.includes(q) || e.name.toLowerCase().includes(q) || (e.staffCode || '').toLowerCase().includes(q) || (e.nameKh || '').includes(q) || (e.position || '').toLowerCase().includes(q)))
+    .filter(e => (!group || e.group === group) && inDepartment(department, e.departmentId) && matchesSearch(q, e))
     .sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
 
   return (

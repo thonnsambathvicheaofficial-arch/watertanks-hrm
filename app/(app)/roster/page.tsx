@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
-import { Button, Flash, PageHeader } from '@/components/ui'
+import { Button, Flash, Input, PageHeader } from '@/components/ui'
 import { DepartmentSelect, GroupSelect, filterNote } from '@/components/StaffFilters'
 import { cn } from '@/lib/utils'
 import { LEGEND, cellStyle, type Cell } from '@/lib/roster-codes'
@@ -18,7 +18,7 @@ const hr = require('@/lib/hr-store')
 export const metadata: Metadata = { title: 'Roster' }
 export const dynamic = 'force-dynamic'
 
-type SP = { month?: string; group?: string; department?: string; view?: string; error?: string; saved?: string }
+type SP = { month?: string; group?: string; department?: string; q?: string; view?: string; error?: string; saved?: string }
 type Day = { d: number; date: string; wd: string; sunday: boolean; holiday: string | null }
 type Row = { pin: string; name: string; group: string | null; cells: Record<number, Cell>; t: { days: number; hours: number; late: number; absent: number; leave: number } }
 
@@ -32,20 +32,22 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
   const month = realMonth(searchParams.month) ? searchParams.month! : thisMonth()
   const view = searchParams.view === 'hours' ? 'hours' : 'status'
   const group = searchParams.group || '', department = searchParams.department || ''
+  const q = (searchParams.q || '').trim().slice(0, 60)
   const ready = await hr.available()
-  const [roster, depts] = await Promise.all([buildRoster({ month, group, departmentId: department }), ready ? hr.departments.list() : []])
+  const [roster, depts] = await Promise.all([buildRoster({ month, group, departmentId: department, q }), ready ? hr.departments.list() : []])
   const days: Day[] = roster.days, rows: Row[] = roster.rows
 
   const href = (over: Partial<SP>) => {
-    const p = new URLSearchParams(Object.entries({ month, group, department, view, ...over }).filter(([, v]) => v) as [string, string][])
+    const p = new URLSearchParams(Object.entries({ month, group, department, q, view, ...over }).filter(([, v]) => v) as [string, string][])
     return `/roster?${p.toString()}`
   }
   const here = href({})
-  const exportQs = new URLSearchParams(Object.entries({ month, group, department }).filter(([, v]) => v) as [string, string][]).toString()
+  const scope = [filterNote(group, department, depts), q ? `search "${q}"` : ''].filter(Boolean).join(' · ')
+  const exportQs = new URLSearchParams(Object.entries({ month, group, department, q }).filter(([, v]) => v) as [string, string][]).toString()
 
   return (
     <>
-      <PageHeader title="Roster" note={`${monthLabel(month)} · ${rows.length} staff${filterNote(group, department, depts) ? ` (${filterNote(group, department, depts)})` : ''}. Select a day to correct it.`}>
+      <PageHeader title="Roster" note={`${monthLabel(month)} · ${rows.length} staff${scope ? ` (${scope})` : ''}. Select a day to correct it.`}>
         <a href={`/api/export/timesheet?${exportQs}`}><Button><Download size={16} aria-hidden /> Export Excel</Button></a>
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
@@ -57,8 +59,9 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
           <input type="hidden" name="view" value={view} />
           <div className="w-[150px]"><GroupSelect value={group} /></div>
           {ready && depts.length > 0 && <div className="w-[170px]"><DepartmentSelect value={department} departments={depts} /></div>}
+          <div className="w-[210px]"><Input name="q" defaultValue={q} placeholder="Name, PIN, staff ID" aria-label="Search staff" /></div>
           <Button type="submit">Filter</Button>
-          {(group || department) && <Link href={href({ group: '', department: '' })} className="touch-target text-[13px] text-ink-soft underline-offset-2 hover:text-ink hover:underline">Clear</Link>}
+          {(group || department || q) && <Link href={href({ group: '', department: '', q: '' })} className="touch-target text-[13px] text-ink-soft underline-offset-2 hover:text-ink hover:underline">Clear</Link>}
         </form>
         <div className="ml-auto inline-flex rounded border border-line-strong bg-raised p-0.5 text-[13px]" role="group" aria-label="Cell content">
           {(['status', 'hours'] as const).map(v => (
