@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Button, Field, Flash, Input, MigrationNotice, PageHeader, Select } from '@/components/ui'
 import { StaffPicker } from '@/components/StaffPicker'
+import { DateRange } from '@/components/DateRange'
 import { decodeEcho, echoOne } from '@/lib/echo'
 import { createLeave } from '../actions'
 import { guard } from '@/lib/guard'
@@ -16,7 +17,10 @@ export const dynamic = 'force-dynamic'
 export default async function NewLeavePage({ searchParams }: { searchParams: { error?: string; v?: string; pin?: string } }) {
   await guard()
   if (!(await lv.ready())) return <><PageHeader title="Record leave" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
-  const [types, staff] = await Promise.all([lv.types.list({ activeOnly: true }), hr.staff.list()])
+  // Public holidays around today (leave can be recorded for a day already past), so the calendar can mark them.
+  const year = Number(new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Phnom_Penh' }).slice(0, 4))
+  const [types, staff, h0, h1, h2] = await Promise.all([lv.types.list({ activeOnly: true }), hr.staff.list(), lv.holidays.list(year - 1), lv.holidays.list(year), lv.holidays.list(year + 1)])
+  const holidays: { date: string; name: string }[] = [...h0, ...h1, ...h2].map((h: { date: string; name: string }) => ({ date: h.date, name: h.name }))
   const people = (staff as { pin: string; name: string; nameKh?: string; staffCode?: string; resignedDate: string }[]).filter(s => !s.resignedDate).sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
   const echo = decodeEcho(searchParams.v)
   const v = (k: string, fb = '') => echoOne(echo, k) ?? fb
@@ -38,10 +42,7 @@ export default async function NewLeavePage({ searchParams }: { searchParams: { e
             </Select>
           </Field>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="First day"><Input type="date" name="from" defaultValue={v('from')} required /></Field>
-          <Field label="Last day" hint="Leave empty for a single day."><Input type="date" name="to" defaultValue={v('to')} /></Field>
-        </div>
+        <DateRange defaultFrom={v('from')} defaultTo={v('to')} holidays={holidays} />
         <fieldset className="rounded-md border border-line bg-raised p-4">
           <legend className="px-1 text-[13px] font-medium">Half day</legend>
           <div className="grid items-center gap-4 sm:grid-cols-2">
