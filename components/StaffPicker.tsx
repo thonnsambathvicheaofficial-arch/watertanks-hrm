@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
-export type PickerPerson = { pin: string; name: string; nameKh?: string; staffCode?: string }
+export type PickerPerson = { pin: string; name: string; nameKh?: string; staffCode?: string; tag?: string }
 
 // A staff member chosen by typing: filters on name (English or Khmer), PIN or Staff ID as you type, then you pick one with
 // the mouse or the arrow keys and Enter. It submits `name` (the PIN) like the plain dropdown it replaces.
@@ -68,7 +68,7 @@ export function StaffPicker({ people, name = 'pin', defaultValue = '', required 
           id={`${id}-list`}
           ref={list}
           role="listbox"
-          className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded border border-line-strong bg-raised py-1 text-[14px] shadow-lg"
+          className="absolute z-30 mt-1 max-h-72 w-full min-w-[320px] overflow-y-auto rounded border border-line-strong bg-raised py-1 text-[14px] shadow-lg"
         >
           {matches.length === 0 && <li className="px-3 py-2 text-ink-soft">No one matches “{text.trim()}”.</li>}
           {matches.map((p, i) => (
@@ -84,7 +84,7 @@ export function StaffPicker({ people, name = 'pin', defaultValue = '', required 
               className={cn('flex cursor-pointer items-baseline justify-between gap-3 px-3 py-1.5', i === active && 'bg-brand-wash', picked?.pin === p.pin && 'font-medium')}
             >
               <span className="truncate">{p.name || 'Unnamed'}{p.nameKh && <span lang="km" className="ml-2 text-[13px] text-ink-soft">{p.nameKh}</span>}</span>
-              <span className="num shrink-0 text-[12px] text-ink-soft">{p.staffCode ? `${p.staffCode} · ` : ''}{p.pin}</span>
+              <span className="num shrink-0 text-[12px] text-ink-soft">{p.staffCode ? `${p.staffCode} · ` : ''}{p.pin}{p.tag ? ` · ${p.tag}` : ''}</span>
             </li>
           ))}
         </ul>
