@@ -24,10 +24,12 @@ type Summary = { pin: string; name: string; group: string | null; days: number; 
 
 const select = 'h-9 w-full rounded border border-line-strong bg-raised px-3 text-[14px] text-ink hover:border-ink-faint focus-visible:border-brand'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { normalizeRange } = require('@/lib/validate')
+
 export default async function ReportsPage({ searchParams }: { searchParams: SP }) {
   await guard()
-  const from = searchParams.from || monthStartStr()
-  const to = searchParams.to || todayStr()
+  const { from, to, note: rangeNote } = normalizeRange(searchParams.from, searchParams.to, { from: monthStartStr(), to: todayStr() })
   const view = searchParams.view === 'summary' ? 'summary' : searchParams.view === 'punches' ? 'punches' : 'daily'
   const q = { from, to, pin: searchParams.pin || '', group: searchParams.group || '', department: searchParams.department || '', deviceId: searchParams.deviceId || '' }
 
@@ -42,7 +44,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: SP }
 
   return (
     <>
-      <PageHeader title="Reports" note={`${from} to ${to} · ${count} ${view === 'summary' ? 'staff' : view === 'punches' ? 'scans' : 'rows'}`}>
+      <PageHeader title="Reports" note={`${from} to ${to} · ${count} ${view === 'summary' ? 'staff' : view === 'punches' ? 'scans' : 'rows'}${rangeNote ? ` · ${rangeNote}` : ''}`}>
         <a href={exportHref(view)}><Button><Download size={16} aria-hidden /> Export Excel</Button></a>
         {view === 'daily' && <a href={exportHref('daily', '&allPunches=1')}><Button><Download size={16} aria-hidden /> With every punch</Button></a>}
       </PageHeader>

@@ -9,6 +9,9 @@ const { toXlsx } = require('@/lib/excel')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { todayStr } = require('@/lib/report-data')
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { realDate } = require('@/lib/validate')
+
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +21,7 @@ export async function GET(req: Request) {
   const denied = await denyUnless(req, 'discipline.view')
   if (denied) return denied
   const sp = new URL(req.url).searchParams
-  const ymd = (k: string) => (/^\d{4}-\d{2}-\d{2}$/.test(sp.get(k) || '') ? sp.get(k)! : '')
+  const ymd = (k: string) => (realDate(sp.get(k)) ? sp.get(k)! : '')
   const kind = D.KINDS[sp.get('kind') || ''] ? sp.get('kind')! : ''
   const status = D.STATUSES[sp.get('status') || ''] ? sp.get('status')! : ''
   const rows = await records.list({ from: ymd('from'), to: ymd('to'), kind, status, departmentId: sp.get('department') || '', q: sp.get('q') || '' })

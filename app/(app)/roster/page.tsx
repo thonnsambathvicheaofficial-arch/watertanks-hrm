@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils'
 import { LEGEND, cellStyle, type Cell } from '@/lib/roster-codes'
 import { guard } from '@/lib/guard'
 import { withReturn } from '@/lib/return-to'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { realMonth } = require('@/lib/validate')
 import { MonthNav } from '@/components/MonthNav'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { buildRoster } = require('@/lib/roster')
@@ -27,7 +29,7 @@ const monthLabel = (m: string) => new Date(m + '-01T00:00:00').toLocaleDateStrin
 
 export default async function RosterPage({ searchParams }: { searchParams: SP }) {
   const me = await guard()
-  const month = /^\d{4}-\d{2}$/.test(searchParams.month || '') ? searchParams.month! : thisMonth()
+  const month = realMonth(searchParams.month) ? searchParams.month! : thisMonth()
   const view = searchParams.view === 'hours' ? 'hours' : 'status'
   const group = searchParams.group || '', department = searchParams.department || ''
   const ready = await hr.available()

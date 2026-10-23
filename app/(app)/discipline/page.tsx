@@ -9,6 +9,8 @@ import { usd } from '@/lib/utils'
 import { guard } from '@/lib/guard'
 import { withReturn } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
+const { realDate } = require('@/lib/validate')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { records } = require('@/lib/discipline-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const D = require('@/lib/discipline')
@@ -28,8 +30,8 @@ export default async function DisciplinePage({ searchParams }: { searchParams: S
   const me = await guard()
   if (!(await records.ready())) return <><PageHeader title="Discipline" /><MigrationNotice file="009_discipline.sql" /></>
   const today = todayStr()
-  const from = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.from || '') ? searchParams.from! : `${today.slice(0, 4)}-01-01`
-  const to = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.to || '') ? searchParams.to! : today
+  const from = realDate(searchParams.from) ? searchParams.from! : `${today.slice(0, 4)}-01-01`
+  const to = realDate(searchParams.to) ? searchParams.to! : today
   const kind = D.KINDS[searchParams.kind || ''] ? searchParams.kind! : ''
   const status = D.STATUSES[searchParams.status || ''] ? searchParams.status! : ''
   const q = (searchParams.q || '').trim()

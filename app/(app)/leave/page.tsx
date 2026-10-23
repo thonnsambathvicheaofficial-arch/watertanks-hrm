@@ -19,6 +19,9 @@ export const dynamic = 'force-dynamic'
 
 type Req = { id: string; pin: string; typeCode: string; typeName: string; from: string; to: string; halfDayPeriod: string; days: number; reason: string; status: string; decidedBy: string; decisionNote: string; createdBy: string }
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { isUuid } = require('@/lib/validate')
+
 export default async function LeavePage({ searchParams }: { searchParams: { status?: string; year?: string; typeId?: string; pin?: string; group?: string; department?: string; error?: string; saved?: string } }) {
   const me = await guard()
   if (!(await lv.ready())) return <><PageHeader title="Leave" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
@@ -33,7 +36,7 @@ export default async function LeavePage({ searchParams }: { searchParams: { stat
   const inScope = group || department
     ? new Set<string>(staff.filter((s: { pin: string; group: string; departmentId: string }) => (!group || s.group === group) && inDepartment(department, s.departmentId)).map((s: { pin: string }) => s.pin))
     : null
-  const found: Req[] = await lv.requests.list({ status: status || undefined, year: year ? Number(year) : undefined, typeId: searchParams.typeId || undefined, pin: searchParams.pin || undefined })
+  const found: Req[] = await lv.requests.list({ status: status || undefined, year: year ? Number(year) : undefined, typeId: isUuid(searchParams.typeId) ? searchParams.typeId : undefined, pin: searchParams.pin || undefined })
   const rows = inScope ? found.filter(r => inScope.has(r.pin)) : found
   const name: Record<string, string> = Object.fromEntries(staff.map((s: { pin: string; name: string }) => [s.pin, s.name]))
   const when = (r: Req) => (r.from === r.to ? `${r.from} ${dayName(r.from).slice(0, 3)}${r.halfDayPeriod ? ` · ${r.halfDayPeriod} half day` : ''}` : `${r.from} to ${r.to}`)

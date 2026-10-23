@@ -16,7 +16,7 @@ function from(name) {
   const run = () => {
     if (q.op === 'insert') {
       if (q.payload.import_key && rows.some(r => r.import_key === q.payload.import_key)) return { data: null, error: { code: '23505', message: 'duplicate' } }
-      const row = { status: 'draft', payroll_entry_id: null, created_at: new Date().toISOString(), ...q.payload, id: 'rec-' + (++seq) }
+      const row = { status: 'draft', payroll_entry_id: null, created_at: new Date().toISOString(), ...q.payload, id: '00000000-0000-4000-8000-' + String(++seq).padStart(12, '0') }
       rows.push(row)
       return { data: q.one ? { id: row.id } : [{ id: row.id }], error: null }
     }

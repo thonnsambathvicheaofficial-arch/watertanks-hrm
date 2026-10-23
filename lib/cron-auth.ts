@@ -14,9 +14,10 @@ const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(
 
 async function dbSecret(name: string): Promise<string | null> {
   try {
-    const { data } = await sb.from('cron_secrets').select('value').eq('name', name).maybeSingle()
+    const { data, error } = await sb.from('cron_secrets').select('value').eq('name', name).maybeSingle()
+    if (error && !/relation|schema cache|does not exist|Could not find/i.test(error.message)) console.error('[cron-auth] could not read the secret:', error.message)
     return data && typeof data.value === 'string' && data.value ? data.value : null
-  } catch { return null }   // table not created yet: fall back to the environment variable
+  } catch (e) { console.error('[cron-auth] could not read the secret:', (e as Error).message); return null }   // table not created yet: fall back to the environment variable
 }
 
 // The push relay (see relay/) vouches for a reader's request with the header `x-relay-secret`. The secret is the row

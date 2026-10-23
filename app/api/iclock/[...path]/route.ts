@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
   try {
     const { rows, badRows } = zkpull.classifyRecords(dev, iclock.toRecords(lines))
-    if (badRows.length) { try { await sb.from('corrupted_punches').upsert(badRows, { onConflict: 'pin,ts', ignoreDuplicates: true }) } catch { /* quarantine is best effort */ } }
+    if (badRows.length) { try { const { error: qe } = await sb.from('corrupted_punches').upsert(badRows, { onConflict: 'pin,ts', ignoreDuplicates: true }); if (qe) console.error('[iclock] quarantine not saved:', qe.message) } catch (e) { console.error('[iclock] quarantine not saved:', (e as Error).message) } }
     if (rows.length) {
       const stamped = rows.map((r: Record<string, unknown>) => ({ ...r, source: 'push' }))
       const { error } = await sb.from('punches').upsert(stamped, { onConflict: 'pin,ts', ignoreDuplicates: true })
