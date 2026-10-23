@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Button, Field, Flash, Input, MigrationNotice, PageHeader, Select } from '@/components/ui'
+import { StaffPicker } from '@/components/StaffPicker'
 import { decodeEcho, echoOne } from '@/lib/echo'
 import { createLeave } from '../actions'
 import { guard } from '@/lib/guard'
@@ -16,7 +17,7 @@ export default async function NewLeavePage({ searchParams }: { searchParams: { e
   await guard()
   if (!(await lv.ready())) return <><PageHeader title="Record leave" /><MigrationNotice file="002_leave_holidays_roster.sql" /></>
   const [types, staff] = await Promise.all([lv.types.list({ activeOnly: true }), hr.staff.list()])
-  const people = (staff as { pin: string; name: string; resignedDate: string }[]).filter(s => !s.resignedDate).sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
+  const people = (staff as { pin: string; name: string; nameKh?: string; staffCode?: string; resignedDate: string }[]).filter(s => !s.resignedDate).sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
   const echo = decodeEcho(searchParams.v)
   const v = (k: string, fb = '') => echoOne(echo, k) ?? fb
   return (
@@ -28,10 +29,7 @@ export default async function NewLeavePage({ searchParams }: { searchParams: { e
       <form action={createLeave} className="max-w-[620px] space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Staff member">
-            <Select name="pin" required defaultValue={v('pin', searchParams.pin || '')}>
-              <option value="" disabled>Choose a person</option>
-              {people.map(p => <option key={p.pin} value={p.pin}>{p.name || 'Unnamed'} · {p.pin}</option>)}
-            </Select>
+            <StaffPicker required name="pin" defaultValue={v('pin', searchParams.pin || '')} people={people.map(p => ({ pin: p.pin, name: p.name, nameKh: p.nameKh, staffCode: p.staffCode }))} />
           </Field>
           <Field label="Leave type">
             <Select name="typeId" required defaultValue={v('typeId')}>
