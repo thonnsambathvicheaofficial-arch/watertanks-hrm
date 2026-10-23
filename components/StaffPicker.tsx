@@ -7,8 +7,8 @@ export type PickerPerson = { pin: string; name: string; nameKh?: string; staffCo
 
 // A staff member chosen by typing: filters on name (English or Khmer), PIN or Staff ID as you type, then you pick one with
 // the mouse or the arrow keys and Enter. It submits `name` (the PIN) like the plain dropdown it replaces.
-export function StaffPicker({ people, name = 'pin', defaultValue = '', required = false, placeholder = 'Type a name, PIN or Staff ID' }: {
-  people: PickerPerson[]; name?: string; defaultValue?: string; required?: boolean; placeholder?: string
+export function StaffPicker({ people, name = 'pin', defaultValue = '', required = false, placeholder = 'Type a name, PIN or Staff ID', onPick }: {
+  people: PickerPerson[]; name?: string; defaultValue?: string; required?: boolean; placeholder?: string; onPick?: (pin: string) => void
 }) {
   const label = (p: PickerPerson) => `${p.name || 'Unnamed'} · ${p.pin}`
   const byPin = useMemo(() => new Map(people.map(p => [p.pin, p])), [people])
@@ -34,7 +34,7 @@ export function StaffPicker({ people, name = 'pin', defaultValue = '', required 
   }, [picked, required, text])
   useEffect(() => { if (open && list.current) (list.current.children[active] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest' }) }, [active, open])
 
-  const choose = (p: PickerPerson) => { setPicked(p); setText(label(p)); setOpen(false) }
+  const choose = (p: PickerPerson) => { setPicked(p); setText(label(p)); setOpen(false); onPick?.(p.pin) }
   const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); if (!open) setOpen(true); else setActive(a => Math.min(a + 1, matches.length - 1)) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => Math.max(a - 1, 0)) }
@@ -60,7 +60,7 @@ export function StaffPicker({ people, name = 'pin', defaultValue = '', required 
         onClick={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onKeyDown={onKey}
-        onChange={e => { setText(e.target.value); setPicked(null); setActive(0); setOpen(true) }}
+        onChange={e => { setText(e.target.value); setPicked(null); onPick?.(''); setActive(0); setOpen(true) }}
         className="h-9 w-full rounded border border-line-strong bg-raised px-3 text-[14px] text-ink transition-colors placeholder:text-ink-faint hover:border-ink-faint focus-visible:border-brand"
       />
       {open && (

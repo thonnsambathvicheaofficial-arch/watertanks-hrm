@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import { Button, Flash, PageHeader } from '@/components/ui'
-import { StaffPicker } from '@/components/StaffPicker'
+import { StaffFilterPicker } from '@/components/StaffFilterPicker'
 import { DepartmentSelect, GroupSelect, filterNote } from '@/components/StaffFilters'
 import { cn } from '@/lib/utils'
 import { LEGEND, cellStyle, type Cell } from '@/lib/roster-codes'
@@ -35,7 +35,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
   const group = searchParams.group || '', department = searchParams.department || ''
   const ready = await hr.available()
   // Every staff member, for the Staff filter (people who have resigned still appear on the months they worked).
-  const staff: { pin: string; name: string; nameKh?: string; staffCode?: string; resignedDate?: string }[] = (await hr.staff.list()).sort((a: { name: string; pin: string }, b: { name: string; pin: string }) => (a.name || a.pin).localeCompare(b.name || b.pin))
+  const staff: { pin: string; name: string; nameKh?: string; staffCode?: string; resignedDate?: string; group?: string | null; departmentId?: string }[] = (await hr.staff.list()).sort((a: { name: string; pin: string }, b: { name: string; pin: string }) => (a.name || a.pin).localeCompare(b.name || b.pin))
   const person = staff.find(s => s.pin === searchParams.pin)
   const pin = person ? person.pin : ''
   const [roster, depts] = await Promise.all([buildRoster({ month, group, departmentId: department, pin }), ready ? hr.departments.list() : []])
@@ -63,7 +63,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
           <input type="hidden" name="view" value={view} />
           <div className="w-[150px]"><GroupSelect value={group} /></div>
           {ready && depts.length > 0 && <div className="w-[170px]"><DepartmentSelect value={department} departments={depts} /></div>}
-          <div className="w-[230px]"><StaffPicker name="pin" defaultValue={pin} placeholder="All staff" people={staff.map(s => ({ pin: s.pin, name: s.name, nameKh: s.nameKh, staffCode: s.staffCode, tag: s.resignedDate ? 'Resigned' : undefined }))} /></div>
+          <div className="w-[230px]"><StaffFilterPicker group={group} department={department} defaultValue={pin} people={staff.map(s => ({ pin: s.pin, name: s.name, nameKh: s.nameKh, staffCode: s.staffCode, tag: s.resignedDate ? 'Resigned' : undefined, group: s.group ?? null, departmentId: s.departmentId || '' }))} /></div>
           <Button type="submit">Filter</Button>
           {(group || department || pin) && <Link href={href({ group: '', department: '', pin: '' })} className="touch-target text-[13px] text-ink-soft underline-offset-2 hover:text-ink hover:underline">Clear</Link>}
         </form>
