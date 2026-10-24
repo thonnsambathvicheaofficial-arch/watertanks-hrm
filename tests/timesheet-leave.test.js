@@ -1,5 +1,5 @@
 // The leave details added to the roster's Excel export.
-const { leaveDetails, LEAVE_HEADER, shortDate } = require('../lib/timesheet-leave.js')
+const { leaveDetails, rosterDetails, LEAVE_HEADER, shortDate } = require('../lib/timesheet-leave.js')
 let fails = 0
 const ok = (c, m) => { console.log(c ? '  ok  ' : '  FAIL', m); if (!c) fails++ }
 
@@ -40,6 +40,24 @@ const flat = [
 const ll = leaveLines(flat)
 ok(ll.get('443') === '23 Oct: Unpaid leave: rain; 26 Oct: Annual leave: Dentist', 'leave days only, in date order, with their reasons')
 ok(ll.get('9') === '23 Oct' && !ll.has('7'), 'a leave day with no note is just the date; absent days are not listed')
+
+console.log('a roster correction that overrode approved leave keeps the leave reason')
+const tsB = {
+  days: [21, 22].map(d => ({ d, date: `2026-10-${d}` })),
+  rows: [{ pin: '194', name: 'Chon Bounthat', group: 'office', cells: {
+    21: { status: 'present', leaveReason: 'Unpaid leave: ឈឺក្រពះ', rosterNote: 'ច្បាប់ 0,5 ថ្ងៃ 21/10/26', leaveCode: undefined },
+    22: { status: 'leave', leaveReason: 'Annual leave: Dentist', leaveCode: 'AL', leaveDays: 1 },
+  } }],
+}
+const lb = leaveDetails(tsB, g, (s) => ({ present: 'Present', leave: 'Leave' }[s] || s))
+ok(lb.entries.get('194').join('|') === '21 Oct: Unpaid leave: ឈឺក្រពះ (roster: Present)|22 Oct: Annual leave: Dentist', 'the leave reason is listed for both days; the corrected day says what the roster shows')
+ok(lb.list[0].join('|') === '2026-10-21|Wednesday|194|Chon Bounthat|Office Staff|||Unpaid leave: ឈឺក្រពះ (roster: Present)' && lb.list[1][5] === 'AL' && lb.list[1][6] === 1, 'in the leave sheet the corrected day has no code or day count (it is not leave on the roster); the real leave day does')
+ok(leaveDetails(tsB).byPin.get('194').startsWith('21 Oct: Unpaid leave: ឈឺក្រពះ (roster: Present); 22 Oct'), 'the one-line text for the Excel column joins them')
+const rbd = rosterDetails(tsB)
+ok(rbd.entries.get('194').join('|') === '21 Oct: ច្បាប់ 0,5 ថ្ងៃ 21/10/26', 'the roster note of that day is listed separately, as its own entry')
+const lf = leaveLines([{ pin: '194', date: '2026-10-21', status: 'present', leaveReason: 'Unpaid leave: rain', note: 'x' }, { pin: '194', date: '2026-10-22', status: 'leave', note: 'Annual leave: Dentist', leaveReason: '' }, { pin: '9', date: '2026-10-21', status: 'present', leaveReason: '' }])
+ok(lf.get('194') === '21 Oct: Unpaid leave: rain (roster: Present); 22 Oct: Annual leave: Dentist' && !lf.has('9'), 'the Reports day rows give the same text; a person with no leave has no entry')
+ok(!leaveDetails({ days, rows: [{ pin: '1', name: 'A', cells: { 23: { status: 'present', leaveReason: '' }, 24: { status: 'absent' } } }] }).byPin.has('1'), 'no leave and no reason: nothing listed')
 
 console.log(fails ? `\n${fails} FAILED` : '\nall passed')
 process.exit(fails ? 1 : 0)

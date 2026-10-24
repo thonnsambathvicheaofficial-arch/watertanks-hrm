@@ -3,11 +3,14 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import { Button, Flash, PageHeader } from '@/components/ui'
 import { StaffFilterPicker } from '@/components/StaffFilterPicker'
+import { NoteList } from '@/components/NoteList'
 import { DepartmentSelect, GroupSelect, filterNote } from '@/components/StaffFilters'
 import { cn } from '@/lib/utils'
 import { LEGEND, cellStyle, type Cell } from '@/lib/roster-codes'
 import { guard } from '@/lib/guard'
 import { withReturn } from '@/lib/return-to'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { leaveDetails, rosterDetails } = require('@/lib/timesheet-leave')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { realMonth } = require('@/lib/validate')
 import { MonthNav } from '@/components/MonthNav'
@@ -40,6 +43,9 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
   const pin = person ? person.pin : ''
   const [roster, depts] = await Promise.all([buildRoster({ month, group, departmentId: department, pin }), ready ? hr.departments.list() : []])
   const days: Day[] = roster.days, rows: Row[] = roster.rows
+  // Each person's dated leave reasons and roster notes (the same text the Excel export carries).
+  const leaveNotes: Map<string, string[]> = leaveDetails(roster).entries
+  const rosterNotes: Map<string, string[]> = rosterDetails(roster).entries
 
   const href = (over: Partial<SP>) => {
     const p = new URLSearchParams(Object.entries({ month, group, department, pin, view, ...over }).filter(([, v]) => v) as [string, string][])
@@ -85,10 +91,12 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
                 </th>
               ))}
               {['Days', 'Hours', 'Late', 'Absent', 'Leave'].map(h => <th key={h} scope="col" className="sticky top-0 z-20 min-w-[54px] border-b border-l border-line bg-paper px-2 py-2 text-right text-[12px] font-medium text-ink-soft first:border-l-2">{h}</th>)}
+              <th scope="col" className="sticky top-0 z-20 min-w-[230px] border-b border-l-2 border-line bg-paper px-3 py-2 text-left text-[12px] font-medium text-ink-soft">Leave reasons</th>
+              <th scope="col" className="sticky top-0 z-20 min-w-[230px] border-b border-l border-line bg-paper px-3 py-2 text-left text-[12px] font-medium text-ink-soft">Roster notes</th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={days.length + 6} className="px-6 py-12 text-center text-ink-soft">No staff for these filters in this month.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={days.length + 8} className="px-6 py-12 text-center text-ink-soft">No staff for these filters in this month.</td></tr>}
             {rows.map(r => (
               <tr key={r.pin} className="group">
                 <th scope="row" className="sticky left-0 z-10 border-b border-r border-line bg-raised px-3 py-1.5 text-left font-normal group-hover:bg-brand-wash">
@@ -119,6 +127,8 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
                 <td className="num border-b border-l border-line px-2 text-right">{r.t.late || ''}</td>
                 <td className="num border-b border-l border-line px-2 text-right">{r.t.absent || ''}</td>
                 <td className="num border-b border-l border-line px-2 text-right">{r.t.leave || ''}</td>
+                <td className="border-b border-l-2 border-line px-3 py-1 align-middle"><NoteList items={leaveNotes.get(r.pin)} label="Leave reasons" /></td>
+                <td className="border-b border-l border-line px-3 py-1 align-middle"><NoteList items={rosterNotes.get(r.pin)} label="Roster notes" /></td>
               </tr>
             ))}
           </tbody>
