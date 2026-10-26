@@ -166,5 +166,12 @@ ok(upd[0] === 'ℹ️ <b>Update</b> · 🕐 12:54 PM scan' && upd[1] === '<b>Toe
 ok(upd[3] === '🟣 <b>Back from morning leave</b> · recorded after this scan, so the earlier <b>Late 5 h 49 min</b> no longer applies.', 'and says the Late remark no longer applies')
 ok(!N.formatUpdate('2026-10-23 12:54:48', { pin: '456', name: 'T' }, '', { tag: 'full', type: 'Roster note' }, 0).includes('no longer applies'), 'with no late remark to withdraw it says only that leave was recorded')
 
+console.log('a correction when a scan was announced the wrong way')
+const corr1 = N.formatCorrection('2026-10-26 16:04:00', { pin: '431', name: 'Doerun Doun', group: 'worker' }, 'Plastic', 'out', 'in', 0, null, 'shift changed to Night').split('\n')
+ok(corr1[0] === '✏️ <b>Correction</b> · announced as 🔴 Punch out (shift changed to Night)', 'the first line says what it was announced as, and why it changed')
+ok(corr1[1] === '🕓 <b>4:04 PM</b> · 🟢 <b>Punch in</b>' && corr1[2] === '<b>Doerun Doun</b>' && corr1[3] === '<i>Plastic · Worker · 26 Oct 2026</i>', 'below it, the scan as it should have read: Punch in, no Late remark')
+ok(N.formatCorrection('2026-10-26 16:04:00', { pin: '1', name: 'A' }, '', 'in', 'out', 0, null).split('\n')[0] === '✏️ <b>Correction</b> · announced as 🟢 Punch in', 'without a reason the line just says what it was announced as')
+ok(N.formatCorrection('2026-10-26 16:04:00', { pin: '1', name: 'A' }, '', null, 'in', 0, null, 'a <test> & b').split('\n')[0] === '✏️ <b>Correction</b> · announced as something else (a &lt;test&gt; &amp; b)', 'an unknown original is stated plainly, and the reason is escaped for Telegram')
+
 console.log(fails ? `\n${fails} FAILED` : '\nall passed')
 process.exit(fails ? 1 : 0)
