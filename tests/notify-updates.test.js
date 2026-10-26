@@ -20,7 +20,12 @@ function from(name) {
     is(k, v) { f.push(r => (v === null ? r[k] == null : r[k] === v)); return api },
     gte(k, v) { f.push(r => r[k] != null && String(r[k]) >= String(v)); return api },
     in(k, vs) { f.push(r => vs.includes(r[k])); return api },
-    or(expr) { const alts = parseOr(expr); f.push(r => alts.some(a => r[a.col] != null && String(r[a.col]) >= a.val)); return api },
+    lt(k, v) { f.push(r => r[k] != null && String(r[k]) < String(v)); return api },
+    or(expr) {
+      const alts = parseOr(expr)
+      const holds = (r, a) => (a.op === 'is' ? (a.val === 'null' ? r[a.col] == null : r[a.col] === a.val) : a.op === 'eq' ? r[a.col] === a.val : a.op === 'like' ? r[a.col] != null && String(r[a.col]).startsWith(a.val.replace(/\*$/, '')) : r[a.col] != null && String(r[a.col]) >= a.val)
+      f.push(r => alts.some(a => holds(r, a))); return api
+    },
     update(p) { op = 'update'; payload = p; return api },
     then(res, rej) {
       const hit = rows.filter(r => f.every(fn => fn(r))).slice(0, lim)
