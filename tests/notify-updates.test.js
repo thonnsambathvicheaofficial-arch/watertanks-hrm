@@ -2,6 +2,8 @@
 // Checks what is sent, that it is sent once, that a failed send is retried, and that nothing is sent when nothing needs correcting.
 const path = require('path')
 process.env.TELEGRAM_BOT_TOKEN = 'test-token'
+// The follow-up only looks at scans announced in the last 24 hours, so the clock is fixed: the test must not depend on the day it runs.
+Date.now = () => Date.parse('2026-10-23T09:00:00Z')
 
 class UserError extends Error {}
 const T = { notification_log: [], leave_requests: [], day_overrides: [], punches: [] }
