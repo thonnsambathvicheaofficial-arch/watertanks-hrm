@@ -47,7 +47,7 @@ export default async function ShiftPage({ params, searchParams }: { params: { id
         </div>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <Button type="submit" variant="primary">{isNew ? 'Create shift' : 'Save shift'}</Button>
-          <Link href="/settings/shifts" className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to shifts</Link>
+          <Link href="/settings/shifts" className="touch-target text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to shifts</Link>
         </div>
       </form>
 

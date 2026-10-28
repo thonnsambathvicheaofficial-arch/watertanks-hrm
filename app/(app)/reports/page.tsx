@@ -40,7 +40,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: SP }
         {view === 'daily' && <a href={exportHref('daily', '&allPunches=1')}><Button><Download size={16} aria-hidden /> With every punch</Button></a>}
       </PageHeader>
 
-      <form method="get" className="mb-5 grid gap-3 rounded-md border border-line bg-raised p-4 sm:grid-cols-2 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto] lg:items-end">
+      <form method="get" className="mb-5 grid grid-cols-2 gap-3 rounded-md border border-line bg-raised p-4 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto] items-end">
         <Field label="From"><Input type="date" name="from" defaultValue={from} /></Field>
         <Field label="To"><Input type="date" name="to" defaultValue={to} /></Field>
         <Field label="Device">
@@ -58,7 +58,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: SP }
         <Field label="View">
           <select name="view" defaultValue={view} className={select}><option value="daily">Daily attendance</option><option value="summary">Summary</option><option value="punches">Raw scans</option></select>
         </Field>
-        <Button type="submit" variant="primary">Run report</Button>
+        <Button type="submit" variant="primary" className="col-span-2 lg:col-span-1">Run report</Button>
       </form>
 
       {view === 'daily' ? <DailyTable rows={daily as Daily[]} /> : view === 'summary' ? <SummaryTable rows={summary as Summary[]} /> : <PunchTable rows={punches as Punch[]} names={names} devices={devices} />}

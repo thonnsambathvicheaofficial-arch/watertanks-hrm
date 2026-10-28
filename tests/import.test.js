@@ -10,14 +10,15 @@ const ok = (c, m) => { console.log(c ? '  ok  ' : '  FAIL', m); if (!c) fails++ 
 const stub = (rel, exports) => { const id = require.resolve(path.join('..', rel)); require.cache[id] = { id, filename: id, loaded: true, exports } }
 class UserError extends Error {}
 const people = [
-  { pin: '1', name: 'Sok Dara', group: 'worker', timeIn: '07:00', timeOut: '16:00', offDays: [0], aliases: ['901'], departmentId: 'd1', shiftId: 's1', position: 'Operator', phone: '', joiningDate: '2025-03-01', resignedDate: '' },
+  { pin: '1', name: 'Sok Dara', group: 'worker', timeIn: '07:00', timeOut: '16:00', offDays: [0], aliases: ['901'], departmentId: 'd1', shiftId: 's1', position: 'Operator', phone: '', joiningDate: '2025-03-01', resignedDate: '', staffCode: 'SF0001', nameKh: '' },
   { pin: '2', name: 'Chan Vy', group: 'office', timeIn: '', timeOut: '', offDays: [0, 6], aliases: [], departmentId: '', shiftId: '', position: '', phone: '', joiningDate: '', resignedDate: '' },
 ]
 const saved = []
+const createdDepts = []
 stub('lib/hr-store.js', {
-  UserError, available: async () => true,
+  UserError, available: async () => true, extended: async () => true,
   staff: { list: async () => people, save: async (pin, input, o) => { saved.push({ pin, input, o }) } },
-  departments: { list: async () => [{ id: 'd1', name: 'Production' }, { id: 'd2', name: 'Admin' }] },
+  departments: { list: async () => [{ id: 'd1', name: 'Production' }, { id: 'd2', name: 'Admin' }, ...createdDepts], create: async (n) => { createdDepts.push({ id: 'dn' + createdDepts.length, name: n }) } },
   shifts: { list: async () => [{ id: 's1', name: 'Day shift', start: '07:00', end: '16:00' }, { id: 's2', name: 'Night shift', start: '19:00', end: '04:00' }] },
 })
 const holidays = [{ date: '2026-10-10', name: 'Pchum Ben', nameKh: '' }]
@@ -48,7 +49,8 @@ const rejects = async (fn) => { try { await fn(); return null } catch (e) { retu
   ok(rows[1].joiningDate === '2026-08-04' && rows[1].timeIn === '19:23', 'single-digit months and 24-hour times')
   ok(rows[2].joiningDate.startsWith('?') && rows[2].timeIn.startsWith('?'), 'an impossible date and a time-like "0.5" text are flagged, not accepted')
   ok(rows[3].joiningDate === '2026-08-14' && rows[3].timeIn === '18:00', 'a month name works; an Excel time fraction (0.75) is 18:00')
-  ok(/Missing: Name/.test(await rejects(() => imp.parse('staff', book([['PIN'], ['1']])))), 'a missing required heading is explained')
+  ok(/at least one of/.test(await rejects(() => imp.parse('staff', book([['Colour'], ['red']])))), 'a file with no recognisable heading is explained')
+  ok(/Missing: PIN/.test(await rejects(() => imp.parse('paysetup', book([['Salary'], ['1']])))), 'a missing required heading is explained')
   ok(/empty/.test(await rejects(() => imp.parse('staff', book([['PIN', 'Name']])))) || /no rows/.test(await rejects(() => imp.parse('staff', book([['PIN', 'Name']])))), 'a file with only headings is refused')
   ok(await rejects(() => imp.parse('staff', Buffer.alloc(0))), 'an empty upload is refused')
   ok(await rejects(() => imp.parse('nope', book([['a'], ['b']]))), 'an unknown kind is refused')
@@ -68,14 +70,31 @@ const rejects = async (fn) => { try { await fn(); return null } catch (e) { retu
   ok(st(0) === 'same', 'a row with blank cells for an existing person changes nothing (blank keeps)')
   ok(st(1) === 'changed' && p[1].changes.length === 1 && p[1].changes[0].field === 'Department' && p[1].changes[0].to === 'Admin', 'a department change is shown as exactly that one change')
   ok(st(2) === 'new' && p[2].data.create && p[2].data.save.shiftId === 's2' && p[2].data.save.timeIn === '19:00', 'a new person with a shift takes the shift hours')
-  ok(st(3) === 'error' && /Nowhere/.test(p[3].message), 'an unknown department is an error on that row')
+  ok(st(3) === 'new' && p.notices.length === 1 && /Nowhere/.test(p.notices[0]), 'a department that does not exist yet is created, and the preview says so')
   ok(st(4) === 'error' && /Days off/.test(p[4].message), 'a new person without days off is an error')
   ok(st(5) === 'error' && /901/.test(p[5].message), 'an alias that belongs to someone else is an error')
   ok(st(6) === 'error' && /line 4/.test(p[6].message), 'a PIN repeated in the file is an error that names the first line')
   ok(st(7) === 'error' && st(8) === 'error', 'an empty PIN and an unrecognised weekday are errors')
-  const ap = await imp.apply('staff', (await imp.parse('staff', book([['PIN', 'Name', 'Department', 'Days off'], ['1', 'Sok Dara', 'Admin', ''], ['2', 'Chan Vy', '', ''], ['20', 'Zed', 'Production', 'Sun'], ['21', 'Bad', 'Nowhere', 'Sun']]))).rows, 'tester')
+  const ap = await imp.apply('staff', (await imp.parse('staff', book([['PIN', 'Name', 'Department', 'Days off', 'Shift'], ['1', 'Sok Dara', 'Admin', '', ''], ['2', 'Chan Vy', '', '', ''], ['20', 'Zed', 'Production', 'Sun', ''], ['21', 'Bad', '', 'Sun', 'No such shift']]))).rows, 'tester')
   ok(ap.changed === 1 && ap.added === 1 && ap.same === 1 && ap.skipped === 1 && saved.length === 2, 'apply writes only new and changed rows, once each; errors and unchanged are left alone')
   ok(saved.find(s => s.pin === '1').input.departmentId === 'd2' && saved.find(s => s.pin === '20').o.create === true, 'apply goes through hr.staff.save with the right flags')
+
+  console.log('staff list in the company own layout (no PIN column)')
+  p = await run('staff', [[], ['No', 'ID CARD', 'EMPLOYEE NAME', '', 'DOB', 'Gender', 'Start Date', 'Group', 'Department', 'Position', 'Phone Number'],
+    [1, 'SF0001', 'Sok Dara', 'សុខ ដារ៉ា', serial('1990-05-01'), 'M', serial('2025-03-01'), 'Worker', 'Production', 'ជាងកាន់ម៉ាស៊ីន', '012 345 678'],
+    [2, 'SF0099', 'Chan  Vy ', 'ចាន់ វី', serial('1995-01-02'), 'F', serial('2024-01-02'), 'Office', 'Brand New Dept', 'Clerk', ''],
+    [3, 'SF0500', 'Nobody Here', '', '', 'F', serial('2024-01-02'), 'Office', 'Production', 'x', ''],])
+  ok(p.length === 3 && p[0].line === 3, 'the heading row is found on line 2 and rows keep their Excel line numbers')
+  ok(p[0].status === 'changed' && /matched by Staff ID/.test(p[0].label) && p[0].changes.some(c => c.field === 'Name (Khmer)' && c.to === 'សុខ ដារ៉ា'), 'a row with no PIN is matched by Staff ID, and the blank-headed Khmer column is read as the Khmer name')
+  ok(p[0].changes.some(c => c.field === 'Gender' && c.to === 'Male') && p[0].changes.some(c => c.field === 'Date of birth' && c.to === '1990-05-01'), 'gender M becomes Male and the Excel date becomes a date of birth')
+  ok(p[1].status === 'changed' && /matched by name/.test(p[1].label) && p[1].data.newDepartment === 'Brand New Dept', 'with no Staff ID match, a name matches regardless of spacing and case')
+  ok(p.notices.length === 1 && /Brand New Dept/.test(p.notices[0]), 'the preview names the department that will be created')
+  ok(p[2].status === 'error' && /No staff member matches/.test(p[2].message), 'a person who matches nobody is an error, never a guess')
+  p = await run('staff', [['PIN', 'Gender'], ['2', 'X']])
+  ok(p[0].status === 'error' && /Gender "X"/.test(p[0].message), 'a gender other than Male or Female is an error')
+  const before = createdDepts.length
+  const ap2 = await imp.apply('staff', (await imp.parse('staff', book([[], ['ID CARD', 'EMPLOYEE NAME', 'Department'], ['SF0001', 'Sok Dara', 'Brand New Dept']]))).rows, 'tester')
+  ok(createdDepts.length === before + 1 && ap2.changed === 1, 'applying creates the new department once, then saves the person into it')
 
   console.log('pay setup')
   p = await run('paysetup', [['PIN', 'Salary', 'Tax resident', 'Dependents', 'Payment method', 'Bank account'],

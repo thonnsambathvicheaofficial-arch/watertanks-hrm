@@ -48,8 +48,8 @@ export default async function PayrollSettingsPage({ searchParams }: { searchPara
           ))}
         </ul>
         <form action={fillFromHrm} className="mt-4 border-t border-line pt-4">
-          <p className="mb-2 max-w-[62ch] text-[13px] text-ink-soft">HRM Hub&apos;s payroll currently uses an exchange rate, dependent relief, non-resident rate, NSSF rates, ceiling and floor, and the five tax brackets. This copies them into any empty box here. It never overwrites a value you entered, and it does not touch overtime, work days or hours.</p>
-          <Button type="submit">Fill empty fields from HRM Hub&apos;s values</Button>
+          <p className="mb-2 max-w-[62ch] text-[13px] text-ink-soft">Suggested values for the exchange rate, dependent relief, non-resident rate, NSSF rates, ceiling and floor, and the five tax brackets, taken from the Cambodian HR system built for LPT. Check them against the current regulation before relying on them. This only fills empty boxes. It never overwrites a value you entered, and it does not touch overtime, work days or hours.</p>
+          <Button type="submit">Fill empty fields with suggested values</Button>
         </form>
       </section>
 
@@ -126,17 +126,17 @@ export default async function PayrollSettingsPage({ searchParams }: { searchPara
         <h2 id="al-h" className="text-[15px] font-semibold">Allowances for everyone</h2>
         <p className="mb-4 mt-1 max-w-[62ch] text-[14px] text-ink-soft">Added to every salaried person each month, as a fixed amount or a percentage of their salary. For one person&apos;s allowance, add it as a monthly item instead.</p>
         <div className="mb-6 overflow-x-auto rounded-md border border-line bg-raised">
-          <div className="min-w-[640px]">
+          <div className="lg:min-w-[640px]">
             {allowances.length === 0 && <p className="px-4 py-6 text-center text-[14px] text-ink-soft">No allowances.</p>}
             {allowances.map(a => (
-              <div key={a.id} className="grid grid-cols-[minmax(160px,1fr)_130px_100px_70px_auto_auto] items-center gap-3 border-b border-line px-3 py-2.5 last:border-b-0">
-                <form id={`a-${a.id}`} action={saveAllowance}><input type="hidden" name="id" value={a.id} /></form>
-                <Input form={`a-${a.id}`} name="name" defaultValue={a.name} aria-label="Allowance name" required />
-                <Select form={`a-${a.id}`} name="kind" defaultValue={a.kind} aria-label={`Kind for ${a.name}`}><option value="fixed">Fixed USD</option><option value="percent">% of salary</option></Select>
-                <Input form={`a-${a.id}`} name="amount" type="number" step="0.01" min={0} defaultValue={a.amount} aria-label={`Amount for ${a.name}`} required />
-                <label className="flex items-center gap-2 text-[13px]"><input form={`a-${a.id}`} type="checkbox" name="isActive" defaultChecked={a.isActive} className={check} /> On</label>
-                <Button form={`a-${a.id}`} type="submit">Save</Button>
-                <form action={deleteAllowance}><input type="hidden" name="id" value={a.id} /><ConfirmButton variant="danger" message={`Delete the allowance "${a.name}"? Payroll months already finalized keep their figures.`}>Delete</ConfirmButton></form>
+              <div key={a.id} className="grid gap-3 border-b border-line px-3 py-3 last:border-b-0 lg:grid-cols-[minmax(160px,1fr)_130px_100px_70px_auto_auto] lg:items-center lg:py-2.5">
+                <form id={`a-${a.id}`} action={saveAllowance} className="hidden"><input type="hidden" name="id" value={a.id} /></form>
+                <div className="grid gap-3 sm:grid-cols-2 lg:contents"><div><span className="mb-1 block text-[12px] text-ink-soft lg:hidden">Name</span><Input form={`a-${a.id}`} name="name" defaultValue={a.name} aria-label="Allowance name" required /></div>
+                <div><span className="mb-1 block text-[12px] text-ink-soft lg:hidden">Kind</span><Select form={`a-${a.id}`} name="kind" defaultValue={a.kind} aria-label={`Kind for ${a.name}`}><option value="fixed">Fixed USD</option><option value="percent">% of salary</option></Select></div></div>
+                <div className="flex flex-wrap items-end gap-x-5 gap-y-3 lg:contents"><div className="w-36 lg:w-auto"><span className="mb-1 block text-[12px] text-ink-soft lg:hidden">Amount</span><Input form={`a-${a.id}`} name="amount" type="number" step="0.01" min={0} defaultValue={a.amount} aria-label={`Amount for ${a.name}`} required /></div>
+                <label className="flex min-h-11 items-center gap-2 text-[13px] lg:min-h-0"><input form={`a-${a.id}`} type="checkbox" name="isActive" defaultChecked={a.isActive} className={check} /> On</label></div>
+                <div className="flex items-center gap-2 lg:contents"><Button form={`a-${a.id}`} type="submit">Save</Button>
+                <form action={deleteAllowance}><input type="hidden" name="id" value={a.id} /><ConfirmButton variant="danger" message={`Delete the allowance "${a.name}"? Payroll months already finalized keep their figures.`}>Delete</ConfirmButton></form></div>
               </div>
             ))}
           </div>

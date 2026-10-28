@@ -12,7 +12,7 @@
     --raised: 1 0 0;
     --ink: 0.235 0.03 255;
     --ink-soft: 0.43 0.025 255;
-    --ink-faint: 0.58 0.02 255;
+    --ink-faint: 0.52 0.022 255;
     --line: 0.915 0.008 250;
     --line-strong: 0.84 0.012 250;
 
@@ -66,6 +66,23 @@
 @layer components {
   /* Numerals line up in every table column. */
   .num { font-variant-numeric: tabular-nums; }
+
+  /* An empty-table message stays in view instead of sitting in the middle of a table wider than the screen. */
+  .tw { container-type: inline-size; }
+  .tw td[colspan] > div { position: sticky; left: 0; width: min(100cqw, 100%); }
+
+  /*
+    Touch screens (any phone or tablet, and any narrow window): controls get a 44px target, and text
+    fields are 16px so iOS does not zoom the page when one is focused. Desktop keeps the denser 36px.
+  */
+  @media (max-width: 1023px), (pointer: coarse) {
+    main :is(button, select, textarea, input:not([type=checkbox], [type=radio], [type=hidden], [type=file], [type=range])) { min-height: 2.75rem; }
+    main :is(select, textarea, input:not([type=checkbox], [type=radio], [type=hidden], [type=file], [type=range])) { font-size: 16px; }
+    main header a, main td a:not([data-dense]) { display: inline-flex; align-items: center; min-height: 2.75rem; }
+    main input[type=checkbox], main input[type=radio] { width: 1.25rem; height: 1.25rem; }
+    main input[type=file] { min-height: 2.75rem; }
+    .touch-target { display: inline-flex; align-items: center; min-width: 2.75rem; min-height: 2.75rem; }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

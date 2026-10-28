@@ -50,7 +50,7 @@ export default async function RotationPage({ searchParams }: { searchParams: { d
       </form>
 
       <form action={assignRotation} className="mb-10">
-        <div className="mb-4 grid gap-4 rounded-md border border-line bg-raised p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_auto] lg:items-end">
+        <div className="mb-4 grid gap-4 rounded-md border border-line bg-raised p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_auto] items-end">
           <Field label="Shift">
             <Select name="shiftId" required defaultValue={echoOne(echo, 'shiftId') ?? ''}>
               <option value="" disabled>Choose a shift</option>
@@ -58,7 +58,7 @@ export default async function RotationPage({ searchParams }: { searchParams: { d
             </Select>
           </Field>
           <Field label="From"><Input type="date" name="from" defaultValue={echoOne(echo, 'from') ?? today} required /></Field>
-          <Field label="To" hint="Empty = no end date."><Input type="date" name="to" defaultValue={echoOne(echo, 'to')} /></Field>
+          <Field label="To (optional)"><Input type="date" name="to" defaultValue={echoOne(echo, 'to')} /></Field>
           <Field label="Note"><Input name="note" placeholder="Optional" defaultValue={echoOne(echo, 'note')} /></Field>
           <Button type="submit" variant="primary">Assign ticked staff</Button>
         </div>

@@ -23,11 +23,13 @@ export default async function StaffMemberPage({ params, searchParams }: { params
   const me = await guard()
   const pin = decodeURIComponent(params.pin)
   const ready = await hr.available()
-  const [profile, shifts, departments, assignments] = await Promise.all([
+  const ext = await hr.extended()
+  const [profile, shifts, departments, assignments, everyone] = await Promise.all([
     hr.staff.get(pin),
     ready ? hr.shifts.list() : [],
     ready ? hr.departments.list() : [],
     ready ? hr.assignments.list({ pin }) : [],
+    ext ? hr.staff.list() : [],
   ])
   if (!profile) notFound()
   const echo = decodeEcho(searchParams.v)
@@ -41,7 +43,7 @@ export default async function StaffMemberPage({ params, searchParams }: { params
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
       {!me.perms.includes('staff.edit') && <ReadOnlyNotice />}
-      <StaffForm profile={profile} fallback={fallback} shifts={shifts as Shift[]} departments={departments} ready={ready} action={updateStaff} />
+      <StaffForm profile={profile} fallback={fallback} shifts={shifts as Shift[]} departments={departments} managers={(everyone as { pin: string; name: string }[]).map(p => ({ pin: p.pin, name: p.name }))} ready={ready} ext={ext} action={updateStaff} />
 
       {ready && (
         <section className="mt-12 max-w-[820px] border-t border-line pt-6" aria-labelledby="rot-h">
@@ -68,7 +70,7 @@ export default async function StaffMemberPage({ params, searchParams }: { params
               </tbody>
             </Table>
           </TableWrap>
-          <form action={addAssignment} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_auto] lg:items-end">
+          <form action={addAssignment} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_auto] items-end">
             <input type="hidden" name="pin" value={pin} />
             <Field label="Shift">
               <Select name="shiftId" required defaultValue={ev('shiftId') ?? ''}>
@@ -77,7 +79,7 @@ export default async function StaffMemberPage({ params, searchParams }: { params
               </Select>
             </Field>
             <Field label="From"><Input type="date" name="from" defaultValue={ev('from')} required /></Field>
-            <Field label="To" hint="Empty = no end date."><Input type="date" name="to" defaultValue={ev('to')} /></Field>
+            <Field label="To (optional)"><Input type="date" name="to" defaultValue={ev('to')} /></Field>
             <Field label="Note"><Input name="note" defaultValue={ev('note')} /></Field>
             <Button type="submit" variant="primary">Add</Button>
           </form>

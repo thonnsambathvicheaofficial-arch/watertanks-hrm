@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { Activity, Building2, CalendarDays, CalendarOff, ClipboardList, Clock, FileClock, Fingerprint, KeyRound, Landmark, LogOut, Menu, PartyPopper, Repeat, Scale, Settings2, ShieldCheck, Table2, Timer, Upload, Users, Wallet, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Activity, Bell, Building2, CalendarDays, CalendarOff, ClipboardList, Clock, FileClock, Fingerprint, KeyRound, Landmark, LogOut, Menu, PartyPopper, Repeat, Scale, Settings2, ShieldCheck, Table2, Timer, Upload, Users, Wallet, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from './Logo'
 
@@ -40,6 +40,7 @@ const ADMIN: Item[] = [
   { href: '/settings/audit', label: 'Audit log', icon: FileClock, perm: 'audit.view' },
   { href: '/settings/users', label: 'Accounts', icon: KeyRound, perm: 'users.manage' },
   { href: '/settings/roles', label: 'Roles', icon: ShieldCheck, perm: 'users.manage' },
+  { href: '/settings/notifications', label: 'Telegram', icon: Bell, perm: 'users.manage' },
 ]
 const SECTIONS: [string, Item[]][] = [['', NAV], ['Payroll', PAY], ['Setup', SETUP], ['Administration', ADMIN]]
 
@@ -48,7 +49,20 @@ export function Sidebar({ username, perms, roleLabel }: { username: string; perm
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
-  const active = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/'))
+  // The drawer closes on Escape and the page behind it does not scroll while it is open.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [open])
+
+  // Only the most specific item is current: /payroll/items lights Monthly items, not Payroll as well.
+  const matches = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/'))
+  const current = SECTIONS.flatMap(([, items]) => items).filter(i => matches(i.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href
+  const active = (href: string) => href === current
 
   async function signOut() {
     await fetch('/api/logout', { method: 'POST' })
@@ -62,7 +76,7 @@ export function Sidebar({ username, perms, roleLabel }: { username: string; perm
         onClick={() => setOpen(false)}
         aria-current={active(href) ? 'page' : undefined}
         className={cn(
-          'flex h-10 items-center gap-3 rounded px-3 text-[14px] transition-colors',
+          'flex h-11 items-center gap-3 rounded px-3 text-[14px] transition-colors lg:h-10',
           active(href) ? 'bg-steel-raised font-medium text-white' : 'text-steel-soft hover:bg-steel-raised/60 hover:text-steel-text',
         )}
       >
@@ -94,7 +108,7 @@ export function Sidebar({ username, perms, roleLabel }: { username: string; perm
           <span className="block truncate text-[13px] text-steel-text" title={username}>{username}</span>
           <span className="block truncate text-[12px] text-steel-soft">{roleLabel}</span>
         </span>
-        <button onClick={signOut} className="rounded p-1.5 text-steel-soft transition-colors hover:bg-steel-raised hover:text-white" aria-label="Sign out">
+        <button onClick={signOut} className="grid h-11 w-11 shrink-0 place-items-center rounded text-steel-soft transition-colors hover:bg-steel-raised hover:text-white lg:h-9 lg:w-9" aria-label="Sign out">
           <LogOut size={17} strokeWidth={1.75} />
         </button>
       </div>
@@ -116,7 +130,7 @@ export function Sidebar({ username, perms, roleLabel }: { username: string; perm
       {/* Mobile bar + drawer */}
       <div className="sticky top-0 z-30 flex h-14 items-center justify-between bg-steel px-4 lg:hidden print:hidden">
         <div className="flex items-center gap-3"><Logo size={28} /><span className="text-[14px] font-semibold text-white">Song Fa HR</span></div>
-        <button onClick={() => setOpen(true)} aria-label="Open menu" className="rounded p-2 text-steel-text hover:bg-steel-raised"><Menu size={20} /></button>
+        <button onClick={() => setOpen(true)} aria-label="Open menu" className="-mr-2 grid h-11 w-11 place-items-center rounded text-steel-text hover:bg-steel-raised"><Menu size={20} /></button>
       </div>
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
@@ -124,7 +138,7 @@ export function Sidebar({ username, perms, roleLabel }: { username: string; perm
           <div className="absolute inset-y-0 left-0 flex w-[260px] flex-col bg-steel shadow-float">
             <div className="flex h-14 items-center justify-between px-4">
               <span className="text-[14px] font-semibold text-white">Menu</span>
-              <button onClick={() => setOpen(false)} aria-label="Close menu" className="rounded p-2 text-steel-text hover:bg-steel-raised"><X size={20} /></button>
+              <button onClick={() => setOpen(false)} aria-label="Close menu" className="-mr-2 grid h-11 w-11 place-items-center rounded text-steel-text hover:bg-steel-raised"><X size={20} /></button>
             </div>
             {nav}
             {footer}

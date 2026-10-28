@@ -17,7 +17,7 @@ const rel = (f) => path.relative(root, f).split(path.sep).join('/')
 const read = (f) => fs.readFileSync(f, 'utf8')
 // app/(app)/settings/roles/[id]/page.tsx -> /settings/roles/[id]
 const routeOf = (f) => '/' + rel(f).replace(/^app\//, '').replace(/\/(page|actions|route)\.tsx?$/, '').split('/').filter(s => !/^\(.*\)$/.test(s)).join('/')
-const ADMIN_PAGES = /^\/settings\/(users|roles)/
+const ADMIN_PAGES = /^\/settings\/(users|roles|notifications)/
 
 // ── the permission table itself ──
 console.log('permission table')

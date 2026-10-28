@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 // One table treatment for the whole app: hairline rules, quiet header, numerals aligned.
 export function TableWrap({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('overflow-x-auto rounded-md border border-line bg-raised', className)}>{children}</div>
+  return <div className={cn('tw relative overflow-x-auto rounded-md border border-line bg-raised', className)}>{children}</div>
 }
 
 export function Th({ children, align = 'left', className }: { children?: ReactNode; align?: 'left' | 'right'; className?: string }) {

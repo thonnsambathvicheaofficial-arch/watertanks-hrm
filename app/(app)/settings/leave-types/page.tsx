@@ -15,7 +15,7 @@ type T = { id: string; code: string; name: string; isPaid: boolean; defaultDays:
 
 const check = 'h-4 w-4 accent-[oklch(0.46_0.15_258)]'
 // Header and rows share one column template so every label sits over its field.
-const cols = 'grid grid-cols-[84px_minmax(180px,1fr)_72px_150px_80px_72px_88px] items-center gap-3 px-3'
+const lg = 'lg:grid lg:grid-cols-[84px_minmax(180px,1fr)_72px_150px_80px_72px_88px] lg:items-center'
 
 export default async function LeaveTypesPage({ searchParams }: { searchParams: { error?: string; saved?: string; v?: string } }) {
   const me = await guard()
@@ -30,21 +30,27 @@ export default async function LeaveTypesPage({ searchParams }: { searchParams: {
       {!ready ? <MigrationNotice file="002_leave_holidays_roster.sql" /> : (
         <>
           <div className="mb-8 overflow-x-auto rounded-md border border-line bg-raised">
-            <div className="min-w-[760px]">
-              <div className={`${cols} border-b border-line bg-paper py-2.5 text-[12px] font-medium text-ink-soft`}>
+            <div className="lg:min-w-[760px]">
+              <div className={`hidden gap-3 px-3 ${lg} border-b border-line bg-paper py-2.5 text-[12px] font-medium text-ink-soft`}>
                 <span>Code</span><span>Name</span><span>Paid</span><span>Default days</span><span>Active</span><span /><span />
               </div>
               {types.length === 0 && <EmptyState title="No leave types" />}
               {types.map(t => (
-                <div key={t.id} className={`${cols} border-b border-line py-2.5 last:border-b-0`}>
-                  <form id={`u-${t.id}`} action={updateLeaveType}><input type="hidden" name="id" value={t.id} /></form>
-                  <Input form={`u-${t.id}`} name="code" defaultValue={t.code} aria-label={`Code for ${t.name}`} maxLength={6} required />
-                  <Input form={`u-${t.id}`} name="name" defaultValue={t.name} aria-label="Name" required />
-                  <label className="flex items-center gap-2 text-[13px]"><input form={`u-${t.id}`} type="checkbox" name="isPaid" defaultChecked={t.isPaid} className={check} /> Paid</label>
-                  <Input form={`u-${t.id}`} name="defaultDays" type="number" step="0.5" min={0} defaultValue={t.defaultDays ?? ''} placeholder="Not set" aria-label={`Default days for ${t.name}`} />
-                  <label className="flex items-center gap-2 text-[13px]"><input form={`u-${t.id}`} type="checkbox" name="isActive" defaultChecked={t.isActive} className={check} /> On</label>
-                  <Button form={`u-${t.id}`} type="submit">Save</Button>
-                  <form action={deleteLeaveType}><input type="hidden" name="id" value={t.id} /><ConfirmButton variant="danger" message={`Delete the leave type "${t.name}"? This only works if no leave has been recorded with it.`}>Delete</ConfirmButton></form>
+                <div key={t.id} className={`grid gap-3 px-3 ${lg} border-b border-line py-3 last:border-b-0 lg:gap-3 lg:py-2.5`}>
+                  <form id={`u-${t.id}`} action={updateLeaveType} className="hidden"><input type="hidden" name="id" value={t.id} /></form>
+                  <div className="grid grid-cols-[84px_minmax(0,1fr)] gap-3 lg:contents">
+                    <div><span className="mb-1 block text-[12px] text-ink-soft lg:hidden">Code</span><Input form={`u-${t.id}`} name="code" defaultValue={t.code} aria-label={`Code for ${t.name}`} maxLength={6} required /></div>
+                    <div><span className="mb-1 block text-[12px] text-ink-soft lg:hidden">Name</span><Input form={`u-${t.id}`} name="name" defaultValue={t.name} aria-label="Name" required /></div>
+                  </div>
+                  <div className="flex flex-wrap items-end gap-x-5 gap-y-3 lg:contents">
+                    <label className="flex min-h-11 items-center gap-2 text-[13px] lg:min-h-0"><input form={`u-${t.id}`} type="checkbox" name="isPaid" defaultChecked={t.isPaid} className={check} /> Paid</label>
+                    <div className="w-36 lg:w-auto"><span className="mb-1 block text-[12px] text-ink-soft lg:hidden">Default days</span><Input form={`u-${t.id}`} name="defaultDays" type="number" step="0.5" min={0} defaultValue={t.defaultDays ?? ''} placeholder="Not set" aria-label={`Default days for ${t.name}`} /></div>
+                    <label className="flex min-h-11 items-center gap-2 text-[13px] lg:min-h-0"><input form={`u-${t.id}`} type="checkbox" name="isActive" defaultChecked={t.isActive} className={check} /> On</label>
+                  </div>
+                  <div className="flex items-center gap-2 lg:contents">
+                    <Button form={`u-${t.id}`} type="submit">Save</Button>
+                    <form action={deleteLeaveType}><input type="hidden" name="id" value={t.id} /><ConfirmButton variant="danger" message={`Delete the leave type "${t.name}"? This only works if no leave has been recorded with it.`}>Delete</ConfirmButton></form>
+                  </div>
                 </div>
               ))}
             </div>

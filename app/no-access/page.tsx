@@ -20,7 +20,7 @@ export default async function NoAccessPage() {
           : `Your account${access.roleName ? ` (${access.roleName})` : ''} is not allowed to open it. Ask an administrator if you need it.`}
       </p>
       <div className="mt-6 flex flex-wrap items-center gap-4">
-        {access && access.perms.length > 0 && <Link href="/" className="inline-flex h-9 items-center rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep">Back to the start</Link>}
+        {access && access.perms.length > 0 && <Link href="/" className="touch-target inline-flex h-9 items-center rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep">Back to the start</Link>}
         <SignOutButton />
       </div>
     </main>

@@ -22,5 +22,8 @@ export async function GET(req: Request) {
       await Promise.race([refreshDeviceUsers(), new Promise((_, rej) => setTimeout(() => rej(new Error('cap')), 25000))])
     }
   } catch { /* best-effort; cache stays as-is */ }
-  return NextResponse.json(result)
+  // Announce the scans this sync just saved. After the scans are safely stored, time-capped, and never throws.
+  let notified: unknown = null
+  try { notified = await require('@/lib/notify').run({ budgetMs: 15000 }) } catch { notified = { error: 'notification run failed' } }
+  return NextResponse.json({ ...result, notified })
 }

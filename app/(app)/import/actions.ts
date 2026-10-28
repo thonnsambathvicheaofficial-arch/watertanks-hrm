@@ -16,7 +16,7 @@ const { UserError } = require('@/lib/hr-store')
 require('@/lib/audit-hooks')
 
 export interface PlanRow { line: number; label: string; status: 'new' | 'changed' | 'same' | 'error'; message?: string; changes?: { field: string; from: unknown; to: unknown }[] }
-export interface Preview { kind: string; filename: string; ignored: string[]; rows: Record<string, string | number>[]; plan: PlanRow[]; counts: { new: number; changed: number; same: number; error: number } }
+export interface Preview { kind: string; filename: string; ignored: string[]; notices: string[]; rows: Record<string, string | number>[]; plan: PlanRow[]; counts: { new: number; changed: number; same: number; error: number } }
 export interface ChunkResult { added: number; changed: number; same: number; skipped: number; failed: { line: number; label: string; message: string }[] }
 
 // Importing needs the general import permission AND the permission to change that kind of data.
@@ -46,8 +46,9 @@ export async function previewImport(f: FormData): Promise<Preview | { error: str
     const file = f.get('file')
     if (!(file instanceof File) || file.size === 0) throw new UserError('Choose an Excel file to import.')
     const { rows, ignored } = await imp.parse(kind, Buffer.from(await file.arrayBuffer()))
-    const plan = (await imp.plan(kind, rows)).map(({ data: _d, ...p }: { data?: unknown }) => p)
-    return { kind, filename: file.name, ignored, rows, plan, counts: imp.count(plan) }
+    const raw = await imp.plan(kind, rows)
+    const plan = raw.map(({ data: _d, ...p }: { data?: unknown }) => p)
+    return { kind, filename: file.name, ignored, notices: raw.notices || [], rows, plan, counts: imp.count(plan) }
   } catch (e) { return { error: message(e) } }
 }
 

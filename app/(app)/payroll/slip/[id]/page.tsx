@@ -40,7 +40,7 @@ export default async function SlipPage({ params }: { params: { id: string } }) {
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center gap-3 print:hidden">
-        <Link href={`/payroll/${s.year}-${String(s.month).padStart(2, '0')}`} className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to {MONTH_NAMES[s.month - 1]} {s.year}</Link>
+        <Link href={`/payroll/${s.year}-${String(s.month).padStart(2, '0')}`} className="touch-target text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Back to {MONTH_NAMES[s.month - 1]} {s.year}</Link>
         <div className="ml-auto"><PrintButton label="Print payslip" /></div>
       </div>
 

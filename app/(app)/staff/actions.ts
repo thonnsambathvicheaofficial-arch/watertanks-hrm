@@ -4,8 +4,13 @@ import { act } from '@/lib/act'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hr = require('@/lib/hr-store')
 
+// Fields the form does not show (before migration 005) are left out, so saving never touches them.
+const EXT = ['staffCode', 'nameKh', 'gender', 'dateOfBirth', 'maritalStatus', 'idCardNo', 'nssfNo', 'address', 'personalEmail', 'emergencyContact', 'emergencyPhone', 'employmentType', 'probationEnd', 'lineManager', 'resignReason']
+
 function readStaff(f: FormData) {
+  const ext = Object.fromEntries(EXT.filter(k => f.has(k)).map(k => [k, f.get(k)]))
   return {
+    ...ext,
     name: f.get('name'), group: f.get('group'), departmentId: f.get('departmentId'), position: f.get('position'),
     phone: f.get('phone'), joiningDate: f.get('joiningDate'), resignedDate: f.get('resignedDate'),
     shiftId: f.get('shiftId'), timeIn: f.get('timeIn'), timeOut: f.get('timeOut'),

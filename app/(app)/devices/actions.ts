@@ -29,6 +29,8 @@ export async function pullNow(f: FormData) {
   await act(BACK, async () => {
     const r = await devices.pull(id, { full: f.get('full') === 'on' })
     if (!r.ok) throw new UserError(`${r.name}: the device could not be read. ${r.error || ''}`.trim())
+    // A manual read also announces any new scans, exactly as the scheduled sync does.
+    try { await require('@/lib/notify').run({ budgetMs: 10000 }) } catch { /* never affects the read */ }
     const note = r.truncated ? ' The read was cut short, so the next sync will try again.' : ''
     return `${r.name}: ${r.pushed} new scan${r.pushed === 1 ? '' : 's'} (${r.totalOnDevice} on the device).${note}`
   })

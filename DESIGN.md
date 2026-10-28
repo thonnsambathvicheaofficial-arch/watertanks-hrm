@@ -16,6 +16,7 @@ IBM Plex Sans (400/500/600), chosen for its engineered character and true tabula
 - Fixed 232px steel rail on desktop; a top bar with a drawer below 1024px.
 - Content is capped at 1240px. A page is a title, an optional one-line note, then the work: a form row and a table. No hero metrics, no icon-and-heading card grids, no nested cards.
 - One table treatment: hairline rules, quiet header, right-aligned numeric columns, hover wash. Secondary columns drop out on narrow screens instead of forcing sideways scroll where the table is short.
+- Touch: below 1024px or on any touch screen, buttons, fields and selects are 44px tall and text fields are 16px (iOS does not zoom on focus); desktop keeps 36px. Rows of fields align on their bottom edge, so a field that needs explaining puts it in the label ("To (optional)"), not in a hint below. Tables sit in a `TableWrap` (relative, scrolling, empty message pinned in view). The roster grid is dense by nature and keeps its small cells.
 - Filters live in the URL (`?from=&to=&pin=`) so any view can be shared or bookmarked.
 
 ## Components

@@ -9,3 +9,5 @@ config.json
 .next/
 next-env.d.ts
 *.tsbuildinfo
+.next-prod/
+.claude/

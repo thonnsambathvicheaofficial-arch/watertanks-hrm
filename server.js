@@ -185,8 +185,9 @@ app.get('/api/cron/pull', h(async (req, res) => {
     if (await store.deviceUsers.ageMinutes() > 45) {
       await Promise.race([refreshDeviceUsers(), new Promise((_, rej) => setTimeout(() => rej(new Error('cap')), 25000))])
     }
-  } catch { /* best-effort; cache stays as-is */ }
-  res.json(result)
+  let notified = null
+  try { notified = await require('./lib/notify').run({ budgetMs: 15000 }) } catch { notified = { error: 'notification run failed' } }
+  res.json({ ...result, notified })
 }))
 
 // ── API: manual per-device pull ─────────────────────────────
@@ -207,6 +208,7 @@ app.post('/api/devices/:id/pull', h(async (req, res) => {
   const { pullOne } = require('./lib/zkpull')
   const ZKLib = require('node-zklib')
   const result = await pullOne(ZKLib, raw, { full: req.query.full === '1' })
+  try { await require('./lib/notify').run({ budgetMs: 10000 }) } catch { /* never affects the read */ }
   res.json(result)
 }))
 

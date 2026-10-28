@@ -32,7 +32,7 @@ export async function fillFromHrm(_f: FormData) {
   await act(BACK, async (s) => {
     const r = await pr.settings.fillFromHrm(s.username)
     if (!r.filled && !r.brackets) return 'Nothing to fill: every one of those fields already has a value.'
-    return `Filled ${r.filled} empty field${r.filled === 1 ? '' : 's'}${r.brackets ? ` and ${r.brackets} tax brackets` : ''} from HRM Hub's current values. Check them against the current regulation.`
+    return `Filled ${r.filled} empty field${r.filled === 1 ? '' : 's'}${r.brackets ? ` and ${r.brackets} tax brackets` : ''} with the suggested values. Check them against the current regulation.`
   })
 }
 

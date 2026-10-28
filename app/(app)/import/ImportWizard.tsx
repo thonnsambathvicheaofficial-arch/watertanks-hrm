@@ -105,6 +105,7 @@ export function ImportWizard({ kinds }: { kinds: KindInfo[] }) {
             <p className="mt-1 text-[14px] text-ink-soft">
               {preview.plan.length} row{preview.plan.length === 1 ? '' : 's'} read: <b className="font-medium text-present">{c.new} new</b>, <b className="font-medium text-brand-deep">{c.changed} changed</b>, {c.same} unchanged, <b className={cn('font-medium', c.error && 'text-absent')}>{c.error} with errors</b>.
             </p>
+            {preview.notices.map(n => <p key={n} className="mt-2 max-w-[70ch] rounded border border-line bg-paper px-3 py-2 text-[14px]">{n}</p>)}
             {preview.ignored.length > 0 && <p className="mt-1 text-[13px] text-ink-soft">Columns not recognised and left out: {preview.ignored.join(', ')}.</p>}
           </div>
 

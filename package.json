@@ -6,11 +6,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3100",
     "build": "next build",
     "next": "next start",
     "lint": "tsc --noEmit",
-    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js && node tests/permissions.test.js && node tests/import.test.js"
+    "test": "node tests/payroll-calc.test.js && node tests/payroll-attendance.test.js && node tests/permissions.test.js && node tests/import.test.js && node tests/notify.test.js"
   },
   "engines": {
     "node": ">=18"

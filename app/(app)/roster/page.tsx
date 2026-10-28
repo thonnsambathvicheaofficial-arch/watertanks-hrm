@@ -5,6 +5,7 @@ import { Button, Flash, PageHeader, Select } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { LEGEND, cellStyle, type Cell } from '@/lib/roster-codes'
 import { guard } from '@/lib/guard'
+import { MonthNav } from '@/components/MonthNav'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { buildRoster } = require('@/lib/roster')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -45,11 +46,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
       <Flash error={searchParams.error} saved={searchParams.saved} />
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
-        <div className="flex items-center gap-1">
-          <Link href={href({ month: shiftMonth(month, -1) })} aria-label="Previous month" className="inline-flex h-9 w-9 items-center justify-center rounded border border-line-strong bg-raised text-ink-soft transition-colors hover:bg-brand-wash"><ChevronLeft size={18} /></Link>
-          <span className="num min-w-[150px] px-2 text-center text-[15px] font-semibold">{monthLabel(month)}</span>
-          <Link href={href({ month: shiftMonth(month, 1) })} aria-label="Next month" className="inline-flex h-9 w-9 items-center justify-center rounded border border-line-strong bg-raised text-ink-soft transition-colors hover:bg-brand-wash"><ChevronRight size={18} /></Link>
-        </div>
+        <MonthNav label={monthLabel(month)} prev={href({ month: shiftMonth(month, -1) })} next={href({ month: shiftMonth(month, 1) })} />
         <form method="get" className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="month" value={month} />
           <input type="hidden" name="view" value={view} />
@@ -59,7 +56,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
         </form>
         <div className="ml-auto inline-flex rounded border border-line-strong bg-raised p-0.5 text-[13px]" role="group" aria-label="Cell content">
           {(['status', 'hours'] as const).map(v => (
-            <Link key={v} href={href({ view: v })} aria-current={view === v ? 'true' : undefined} className={cn('rounded-sm px-3 py-1.5 font-medium transition-colors', view === v ? 'bg-brand text-white' : 'text-ink-soft hover:bg-brand-wash')}>{v === 'status' ? 'Status' : 'Hours'}</Link>
+            <Link key={v} href={href({ view: v })} aria-current={view === v ? 'true' : undefined} className={cn('touch-target justify-center rounded-sm px-3 py-1.5 font-medium transition-colors', view === v ? 'bg-brand text-white' : 'text-ink-soft hover:bg-brand-wash')}>{v === 'status' ? 'Status' : 'Hours'}</Link>
           ))}
         </div>
       </div>
@@ -94,12 +91,12 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
                   return (
                     <td key={d.d} className="border-b border-line p-[2px]">
                       {me.perms.includes('attendance.edit') ? (
-                        <Link href={`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`} title={tip} aria-label={tip}
+                        <Link data-dense href={`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`} title={tip} aria-label={tip}
                           className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>
                         {label}
                       </Link>
                         ) : (
-                        <span title={tip} aria-label={tip} className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>{label}</span>
+                        <span data-dense title={tip} aria-label={tip} className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>{label}</span>
                         )}
                     </td>
                   )

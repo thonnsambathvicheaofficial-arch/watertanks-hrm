@@ -45,16 +45,17 @@ export default async function ItemsPage({ searchParams }: { searchParams: { year
       {locked && <p className="mb-5 rounded border border-line bg-raised px-3.5 py-2.5 text-[14px] text-ink-soft">Payroll for this month is finalized, so items cannot be added or removed. Record a correction as an adjustment next month.</p>}
 
       {!locked && (
-        <form action={addItem} className="mb-6 grid gap-3 rounded-md border border-line bg-raised p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.4fr_1fr_1fr_1.2fr_auto] lg:items-end">
+        <form action={addItem} className="mb-2 grid gap-3 rounded-md border border-line bg-raised p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.4fr_1fr_1fr_1.2fr_auto] items-end">
           <input type="hidden" name="year" value={year} /><input type="hidden" name="month" value={month} />
           <Field label="Staff member"><Select name="pin" required defaultValue={echoOne(echo, 'pin') ?? ''}><option value="" disabled>Choose a person</option>{people.map(p => <option key={p.pin} value={p.pin}>{p.name || 'Unnamed'} · {p.pin}</option>)}</Select></Field>
           <Field label="Kind"><Select name="kind" required defaultValue={echoOne(echo, 'kind') ?? 'bonus'}>{Object.entries(kinds).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
-          <Field label="Amount (USD)" hint="Minus for a reduction, on adjustments and withholdings."><Input type="number" step="0.01" name="amount" defaultValue={echoOne(echo, 'amount')} required /></Field>
+          <Field label="Amount (USD)"><Input type="number" step="0.01" name="amount" defaultValue={echoOne(echo, 'amount')} required /></Field>
           <Field label="Label"><Input name="label" defaultValue={echoOne(echo, 'label')} placeholder="Optional" /></Field>
           <Field label="Remarks"><Input name="remarks" defaultValue={echoOne(echo, 'remarks')} placeholder="Optional" /></Field>
           <Button type="submit" variant="primary">Add</Button>
         </form>
       )}
+      {!locked && <p className="mb-6 max-w-[70ch] text-[13px] text-ink-soft">Use a minus sign for a reduction, on adjustments and withholdings.</p>}
 
       <TableWrap>
         <Table wide={false}>

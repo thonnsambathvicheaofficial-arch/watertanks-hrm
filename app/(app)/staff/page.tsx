@@ -13,19 +13,20 @@ const { glabel } = require('@/lib/exports')
 export const metadata: Metadata = { title: 'Staff' }
 export const dynamic = 'force-dynamic'
 
-type P = { pin: string; name: string; group: string; timeIn: string; timeOut: string; offDays: number[]; aliases: string[]; departmentId: string; shiftId: string; position: string }
+type P = { pin: string; name: string; group: string; timeIn: string; timeOut: string; offDays: number[]; aliases: string[]; departmentId: string; shiftId: string; position: string; staffCode?: string; nameKh?: string }
 type Opt = { id: string; name: string }
 
 export default async function StaffPage({ searchParams }: { searchParams: { q?: string; group?: string; error?: string; saved?: string } }) {
   const me = await guard()
   const ready = await hr.available()
+  const ext = await hr.extended()
   const [all, shifts, depts]: [P[], Opt[], Opt[]] = await Promise.all([hr.staff.list(), ready ? hr.shifts.list() : [], ready ? hr.departments.list() : []])
   const shiftName = Object.fromEntries(shifts.map(s => [s.id, s.name]))
   const deptName = Object.fromEntries(depts.map(d => [d.id, d.name]))
   const q = (searchParams.q || '').trim().toLowerCase()
   const group = searchParams.group || ''
   const rows = all
-    .filter(e => (!group || e.group === group) && (!q || e.pin.includes(q) || e.name.toLowerCase().includes(q)))
+    .filter(e => (!group || e.group === group) && (!q || e.pin.includes(q) || e.name.toLowerCase().includes(q) || (e.staffCode || '').toLowerCase().includes(q) || (e.nameKh || '').includes(q) || (e.position || '').toLowerCase().includes(q)))
     .sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
 
   return (
@@ -36,21 +37,23 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
-        <div className="w-full max-w-[280px]"><Input name="q" defaultValue={searchParams.q} placeholder="Search name or PIN" aria-label="Search staff" /></div>
+        <div className="w-full max-w-[280px]"><Input name="q" defaultValue={searchParams.q} placeholder="Name, PIN, staff ID, position" aria-label="Search staff" /></div>
         <div className="w-[170px]"><Select name="group" defaultValue={group} aria-label="Group"><option value="">All groups</option><option value="office">Office staff</option><option value="worker">Workers</option></Select></div>
         <Button type="submit">Filter</Button>
       </form>
       <TableWrap>
         <Table>
-          <thead><tr><Th>PIN</Th><Th>Name</Th><Th>Group</Th>{ready && <Th>Department</Th>}<Th>{ready ? 'Shift' : 'Hours'}</Th><Th>Off days</Th><Th>Also scans as</Th></tr></thead>
+          <thead><tr><Th>PIN</Th>{ext && <Th>Staff ID</Th>}<Th>Name</Th><Th>Group</Th>{ready && <Th>Department</Th>}{ready && <Th>Position</Th>}<Th>{ready ? 'Shift' : 'Hours'}</Th><Th>Off days</Th><Th>Also scans as</Th></tr></thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={ready ? 7 : 6}><EmptyState title="No staff match" /></td></tr>}
+            {rows.length === 0 && <tr><td colSpan={9}><EmptyState title="No staff match" /></td></tr>}
             {rows.map(e => (
               <tr key={e.pin}>
                 <Td className="num text-ink-soft">{e.pin}</Td>
-                <Td className="font-medium"><Link href={`/staff/${encodeURIComponent(e.pin)}`} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{e.name || 'Unnamed'}</Link></Td>
+                {ext && <Td className="num whitespace-nowrap text-ink-soft">{e.staffCode}</Td>}
+                <Td className="font-medium"><Link href={`/staff/${encodeURIComponent(e.pin)}`} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{e.name || 'Unnamed'}</Link>{e.nameKh && <div lang="km" className="text-[13px] font-normal text-ink-soft">{e.nameKh}</div>}</Td>
                 <Td className="text-ink-soft">{glabel(e.group)}</Td>
                 {ready && <Td className="text-ink-soft">{deptName[e.departmentId] || ''}</Td>}
+                {ready && <Td className="text-ink-soft"><span lang="km">{e.position}</span></Td>}
                 <Td className="num whitespace-nowrap">
                   {ready && e.shiftId ? shiftName[e.shiftId]
                     : e.timeIn && e.timeOut ? <>{to12h(e.timeIn)} to {to12h(e.timeOut)}</>

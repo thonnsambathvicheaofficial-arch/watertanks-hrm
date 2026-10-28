@@ -64,6 +64,23 @@ Decisions confirmed by Jea: monthly salary with pro-rata deduction; overtime sug
 - All of it audited (device add/edit/remove/read, PIN change, work hours); permissions: devices and work hours need setup.edit, Unlisted PINs staff.edit.
 - Verified live with ZZ records: 28 checks (rename incl. refusals and cascade, device add/edit/read-unreachable/remove-with-scans refused, held list), every table's hash identical afterwards; pages 200; Read now on K40.
 
+## Done (phase 7a: fuller staff profile; migration 005 written, NOT yet run by Jea)
+- migrations/005_staff_profile_extended.sql (validated in an in-memory Postgres: additive, idempotent, unique staff ID, gender M/F, line manager follows PIN renames): Staff ID, Khmer name, gender, date of birth, marital status, ID card number, NSSF number, address, personal email, emergency contact and phone, contract type, probation end, line manager, reason for leaving. Bank details stay in Pay setup.
+- Staff form in sections (Identity, Employment, Contact, Working pattern) and the staff list shows Staff ID, Khmer name and position and searches them. Before migration 005 the new fields are simply hidden and every page works as before.
+- Import (Staff details) matches a row to a person by PIN, then Staff ID, then exact name (spelling and spacing ignored); a row that matches nobody is an error (a new person needs a PIN). It finds the heading row even under a title, reads a blank-headed Khmer name column, keeps Excel line numbers, and creates departments the file introduces (the preview says which).
+- data/staff-profile-import.xlsx (git-ignored) is the company staff list with PINs added: 110 of 112 people matched (105 exact, 5 with spelling differences listed on its "Check these" sheet). Two people in the file have no PIN on the system, and two system staff are not in the file.
+
+## Done (phase 8, step 1: Telegram scan notifications; migration 006 written, NOT yet run by Jea)
+- migrations/006_telegram_notifications.sql (validated in an in-memory Postgres): a settings row (off by default) and a delivery log with one row per scan (unique, so a scan is announced exactly once). The bot token is never stored: it is the TELEGRAM_BOT_TOKEN server setting.
+- lib/notify.js: after each device sync saves scans, announces new ones in the Telegram group (name, Khmer name, department, group, date, time). Only scans saved after notifications are switched on, never older than 30 minutes, ignores a repeat scan within 2 minutes, scans are remapped like the reports, one message each up to 12 waiting then digests (Telegram allows ~20 a minute), failed sends retried up to 5 times, never blocks or breaks the sync.
+- Settings page /settings/notifications (administrators only): on/off, group ID, who to announce (everyone/office/workers, departments), the three thresholds, "Send test message" (reports which bot and group it reached), delivery log. Audited. Hooked into /api/cron/pull and the Devices "Read now".
+- Speed: step 1 announces within a sync (up to 5 minutes). Step 2 (not built): a 55-second loop each minute polling every ~10 s with a tail read, for about 10-15 s delay. Needs the scheduler and Vercel plan details from Jea.
+
+## Done (phase 8, step 1b: leave in the Telegram messages; migration 007 written, NOT yet run by Jea)
+- Telegram message now: clock + time, Punch in/out/Repeat scan, late minutes (from the report engine), and leave context: morning half-day first scan = "Back from morning leave" (never late), afternoon half-day punch out = "Afternoon leave", any scan on full-day approved leave = "On approved leave today" flag; the leave type shows on the third line. The Khmer name is not in the message. Pending requests are not shown; no afternoon-start lateness rule (reports unchanged).
+- migrations/007_telegram_leave_digest.sql: optional daily "On leave today" list (full day, morning, afternoon sections), sent once per working day at a chosen time (default 07:30, up to 3 hours later), skipped on days off, holidays and when nobody is on leave; claimed before sending so it is sent once. Settings page has the checkbox and time once 007 is run.
+- Leave period (morning/afternoon) and leave type name now travel with each leave day (lib/leave-calc.js, lib/leave-store.js); no schema change.
+
 ## Still to do on the legacy parity list
 None known beyond the cutover checklist below.
 
