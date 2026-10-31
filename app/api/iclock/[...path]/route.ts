@@ -61,7 +61,8 @@ export async function POST(req: Request) {
   if (!dev) return plain('ERROR: unknown device', 404)
 
   try {
-    const { rows, badRows } = zkpull.classifyRecords(dev, iclock.toRecords(lines))
+    const exemptPins = await zkpull.nightShiftPins()
+    const { rows, badRows } = zkpull.classifyRecords(dev, iclock.toRecords(lines), exemptPins)
     if (badRows.length) { try { const { error: qe } = await sb.from('corrupted_punches').upsert(badRows, { onConflict: 'pin,ts', ignoreDuplicates: true }); if (qe) console.error('[iclock] quarantine not saved:', qe.message) } catch (e) { console.error('[iclock] quarantine not saved:', (e as Error).message) } }
     if (rows.length) {
       const stamped = rows.map((r: Record<string, unknown>) => ({ ...r, source: 'push' }))

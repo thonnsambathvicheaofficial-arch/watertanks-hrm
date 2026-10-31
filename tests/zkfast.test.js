@@ -28,6 +28,8 @@ r = classifyRecords(dev, [rec(3, new Date('1999-12-31T17:00:00Z')), rec(5, new D
 ok(r.rows.length === 0 && r.badRows.length === 2 && r.badRows.every(x => x.reason === 'out_of_range_timestamp'), 'a record with an impossible time (year 1999 or 2111) is quarantined, never saved as a scan')
 r = classifyRecords(b3c, [rec(7, new Date(2026, 9, 21, 0, 1, 10))])
 ok(r.rows.length === 0 && r.badRows[0].reason === 'midnight_artifact', "B3-C's recurring phantom scans just after midnight are quarantined")
+r = classifyRecords(b3c, [rec(7, new Date(2026, 9, 21, 0, 1, 10))], new Set(['7']))
+ok(r.rows.length === 1 && r.badRows.length === 0, "B3-C's midnight scan for exempt night-shift pin is accepted, not quarantined")
 r = classifyRecords(dev, [rec(7, new Date(2026, 9, 21, 0, 1, 10))])
 ok(r.rows.length === 1, 'the same time on another device is a real scan (a night shift can start at midnight)')
 r = classifyRecords(dev, [rec(1, new Date('not a date')), rec(2, day)])

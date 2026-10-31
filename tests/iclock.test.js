@@ -39,6 +39,7 @@ const bad = classifyRecords(dev, toRecords(parseAttLog('3\t1999-12-31 17:00:00\t
 ok(bad.rows.length === 0 && bad.badRows.length === 1, 'an impossible timestamp is quarantined, as on the polling path')
 const b3c = { id: '705f0b5d-a00c-4137-bfa7-bae3ef024e49', name: 'B3-C' }
 ok(classifyRecords(b3c, toRecords(parseAttLog('7\t2026-10-21 00:01:10\t0\t1'))).rows.length === 0, "B3-C's phantom scans just after midnight are quarantined here too")
+ok(classifyRecords(b3c, toRecords(parseAttLog('7\t2026-10-21 00:01:10\t0\t1')), new Set(['7'])).rows.length === 1, "night shift pin is exempt from midnight quarantine")
 
 console.log(fails ? `\n${fails} FAILED` : '\nall passed')
 process.exit(fails ? 1 : 0)
