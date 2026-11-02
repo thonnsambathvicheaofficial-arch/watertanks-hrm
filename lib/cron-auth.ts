@@ -12,7 +12,17 @@ const sb = require('@/lib/supabase')
 // With neither set, everything is refused (never the header "Bearer undefined").
 const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b))
 
+// The scheduler calls every few seconds and the secret almost never changes, so it is remembered for a minute instead of being read
+// from the database on every call. A secret that could not be read is never remembered.
+const secretCache = new Map<string, { value: string; at: number }>()
 async function dbSecret(name: string): Promise<string | null> {
+  const hit = secretCache.get(name)
+  if (hit && Date.now() - hit.at < 60000) return hit.value
+  const value = await readSecret(name)
+  if (value) secretCache.set(name, { value, at: Date.now() })
+  return value
+}
+async function readSecret(name: string): Promise<string | null> {
   try {
     const { data, error } = await sb.from('cron_secrets').select('value').eq('name', name).maybeSingle()
     if (error && !/relation|schema cache|does not exist|Could not find/i.test(error.message)) console.error('[cron-auth] could not read the secret:', error.message)

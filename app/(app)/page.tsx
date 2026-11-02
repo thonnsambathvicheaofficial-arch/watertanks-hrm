@@ -20,7 +20,7 @@ const { summarize, ago } = require('@/lib/live-summary')
 export const metadata: Metadata = { title: 'Live' }
 export const dynamic = 'force-dynamic'
 
-const REFRESH_SECONDS = 30
+const REFRESH_SECONDS = 60
 const LATEST = 15   // a glance, not the log: the full list is one click away in Reports
 
 type Counts = { expected: number; in: number; onTime: number; late: number; notYet: number; leave: number; dayOff: number; pctIn: number; lateMinutes: number }
@@ -259,7 +259,7 @@ export default async function LivePage({ searchParams }: { searchParams: { group
         </div>
       </div>
 
-      <p className="mt-6 text-[12px] text-ink-faint">Updated {clock.label}. Refreshes every {REFRESH_SECONDS} seconds while this tab is open.</p>
+      <p className="mt-6 text-[12px] text-ink-faint">Updated {clock.label}. Refreshes every {REFRESH_SECONDS} seconds while you are using this tab, and pauses after 10 minutes of no activity.</p>
     </>
   )
 }
