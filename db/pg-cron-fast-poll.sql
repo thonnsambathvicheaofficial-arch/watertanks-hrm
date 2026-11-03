@@ -7,10 +7,12 @@
 -- The fast poll asks each reader "how many records do you hold?", reads only the newest scans if that grew, saves them
 -- and sends the Telegram message (about 2 s from save to Telegram, with the site running in Tokyo next to the database).
 --
--- Three jobs, Phnom Penh time (the factory also works on Sunday):
---   songfa-fast-poll         every 30 s, Monday to Saturday, 06:00 to 18:59   (a scan is announced in about 30 to 32 s)
---   songfa-fast-poll-sunday  every minute, Sunday, 06:00 to 18:59             (fewer people work Sunday)
---   songfa-fast-poll-quiet   every minute, the 05:00 and 19:00 hours, every day (early start and late finish)
+-- Two jobs, Phnom Penh time, every day (the factory also works on Sunday). Scans are not spread evenly: over 4,300 scans
+-- (5 Oct to 2 Nov) about 85% fall in two windows, 06:15 to 08:00 and 17:00 to 17:45, and the rest of the day has 0 to 4
+-- an hour, so the ticker follows them:
+--   songfa-fast-poll         every 30 s in the shift windows 06:00-08:29 and 16:45-18:14   (a scan is announced in about 30 to 32 s)
+--   songfa-fast-poll-steady  every 5 minutes for the rest of 05:00-19:59                   (a lone scan is announced within about 5 minutes)
+-- Outside 05:00-19:59 nothing is polled (as before); the reader keeps its scans and the next tick collects them.
 --
 -- The password the call carries lives in the table public.cron_secrets (made here, with a random value). The job reads
 -- it from there on every call, and the site reads the same row to check it, so no secret is copied into Vercel or into
@@ -18,20 +20,17 @@
 --
 -- Sized for the Vercel Hobby (free) plan. Hobby includes, per month: 1,000,000 function invocations, 4 hours of
 -- Active CPU and 360 GB-hours of provisioned memory (vercel.com/docs/plans/hobby, checked 2026-10). Going over
--- pauses the whole project (every page answers 402 DEPLOYMENT_DISABLED, the sign-in pages included).
--- The first schedule here (every 5 s) did exactly that on 1 November 2026: Active CPU reached 4 h 12 m of 4 h
--- (memory 175 of 360 GB-hrs and invocations 473K of 1M were fine). CPU is the limit that matters.
+-- pauses the whole project (every page answers 402 DEPLOYMENT_DISABLED, the sign-in pages included), and Hobby judges the last
+-- 30 days, so a bad stretch keeps counting for a month. The first schedule here (every 5 s all day) did exactly that on
+-- 1 November 2026: Active CPU reached 4 h 12 m of 4 h (memory 175 of 360 GB-hrs and invocations 473K of 1M were fine).
+-- CPU is the limit that matters, and a tick costs about the same however little it finds.
 --
--- Measured from Vercel's Active CPU chart (Oct 21 - Nov 1): a working day at 5 s cost about 20 minutes, a Sunday at 10 s about
--- 6.5 minutes, i.e. roughly 80 ms of CPU per tick plus the pages people open.
+-- Measured: a full idle tick is about 37 ms of CPU and 11 database calls locally; Vercel's chart implies about 80 ms.
 --
---   Mon-Sat:    13 hours x 120 ticks x 26 days  = about 41,000 a month   (about 2.2 minutes of CPU a day)
---   Sunday:     13 hours x 60 ticks x 4.3 days  = about 3,400
---   early/late: 2 hours x 60 ticks x 30 days    = about 3,600    -> roughly 48,000 calls, 5% of the invocation allowance
---   CPU:        about 2.4 hours a month with the pages included, against 4. After the first week, check Vercel > Usage:
---               a working day above about 6 minutes means something else is spending CPU.
--- The way to go lower and get instant announcements again is push: the readers send each scan to the site themselves
--- (see docs/PUSH.md), and this ticker then stays as a once-a-minute backup.
+--   shift windows: 240 minutes x 2 ticks a minute = 480 ticks a day
+--   steady:        (900 - 240) minutes / 5        = 132 ticks a day
+--   total about 612 a day, 18,400 a month (was 270,000 at 5 s and 48,000 at a flat 30 s) = about 0.4 hours of CPU a month.
+-- If the shift times change, move the two windows below (minute of day: 360 = 06:00, 509 = 08:29, 1005 = 16:45, 1094 = 18:14).
 -- ============================================================================
 
 create extension if not exists pg_cron;
@@ -49,7 +48,10 @@ insert into public.cron_secrets (name, value)
 values ('scheduler', replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''))
 on conflict (name) do nothing;
 
--- Monday to Saturday, 06:00 to 18:59: every 30 seconds.
+-- The earlier layouts had three jobs; remove the two that no longer apply (does nothing when they are not there).
+select cron.unschedule(jobid) from cron.job where jobname in ('songfa-fast-poll-sunday', 'songfa-fast-poll-quiet');
+
+-- Shift windows, every day: every 30 seconds.
 select cron.schedule(
   'songfa-fast-poll',
   '30 seconds',
@@ -59,45 +61,36 @@ select cron.schedule(
     headers := jsonb_build_object('Authorization', 'Bearer ' || (select value from public.cron_secrets where name = 'scheduler')),
     timeout_milliseconds := 25000
   )
-  where extract(isodow from (now() at time zone 'Asia/Phnom_Penh')) between 1 and 6
-    and extract(hour from (now() at time zone 'Asia/Phnom_Penh')) between 6 and 18;
+  from (select extract(hour from (now() at time zone 'Asia/Phnom_Penh')) * 60
+             + extract(minute from (now() at time zone 'Asia/Phnom_Penh')) as m) t
+  where t.m between 360 and 509 or t.m between 1005 and 1094;
   $$
 );
 
--- Sunday, 06:00 to 18:59: every minute.
+-- The rest of 05:00 to 19:59, every day: every 5 minutes.
 select cron.schedule(
-  'songfa-fast-poll-sunday',
-  '* * * * *',
+  'songfa-fast-poll-steady',
+  '*/5 * * * *',
   $$
   select net.http_get(
     url     := 'https://watertanks-hrm.vercel.app/api/cron/fast',
     headers := jsonb_build_object('Authorization', 'Bearer ' || (select value from public.cron_secrets where name = 'scheduler')),
     timeout_milliseconds := 25000
   )
-  where extract(isodow from (now() at time zone 'Asia/Phnom_Penh')) = 7
-    and extract(hour from (now() at time zone 'Asia/Phnom_Penh')) between 6 and 18;
+  from (select extract(hour from (now() at time zone 'Asia/Phnom_Penh')) * 60
+             + extract(minute from (now() at time zone 'Asia/Phnom_Penh')) as m) t
+  where t.m between 300 and 1199
+    and not (t.m between 360 and 509 or t.m between 1005 and 1094);
   $$
 );
 
--- The 05:00 and 19:00 hours, every day: every minute.
-select cron.schedule(
-  'songfa-fast-poll-quiet',
-  '* * * * *',
-  $$
-  select net.http_get(
-    url     := 'https://watertanks-hrm.vercel.app/api/cron/fast',
-    headers := jsonb_build_object('Authorization', 'Bearer ' || (select value from public.cron_secrets where name = 'scheduler')),
-    timeout_milliseconds := 25000
-  )
-  where extract(hour from (now() at time zone 'Asia/Phnom_Penh')) in (5, 19);
-  $$
-);
-
--- Check: the three jobs exist and the secret is set (shows only its length, never the value).
-select j.jobid, j.jobname, j.schedule, j.active, (select length(value) from public.cron_secrets where name = 'scheduler') as secret_length
-from cron.job j where j.jobname like 'songfa-fast-poll%' order by j.jobname;
+-- Check: every scheduled job in the database (the two above plus anything else, for example the full-sync job that calls
+-- /api/cron/pull), and the secret is set (shows only its length, never the value).
+select j.jobid, j.jobname, j.schedule, j.active, left(j.command, 110) as command,
+       (select length(value) from public.cron_secrets where name = 'scheduler') as secret_length
+from cron.job j order by j.jobid;
 
 -- ── To stop them ────────────────────────────────────────────────────────────
---   select cron.unschedule('songfa-fast-poll'); select cron.unschedule('songfa-fast-poll-sunday'); select cron.unschedule('songfa-fast-poll-quiet');
+--   select cron.unschedule('songfa-fast-poll'); select cron.unschedule('songfa-fast-poll-steady');
 -- ── To see recent calls and their answers ───────────────────────────────────
 --   select id, status_code, created, left(content::text, 200) from net._http_response order by id desc limit 10;
