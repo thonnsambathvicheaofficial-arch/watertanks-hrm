@@ -93,7 +93,7 @@ export default async function HolidaysPage({ searchParams }: { searchParams: SP 
                       const label = `${longDate(c.date)}${c.holiday ? `, ${c.holiday.name}` : ''}${c.today ? ', today' : ''}`
                       return (
                         <td key={c.date} className={cn(base, 'h-14 p-0 align-top sm:h-24', c.sunday && 'bg-dayoff-wash/40')}>
-                          <Link href={href(month, c.date)} aria-label={label} aria-current={c.today ? 'date' : undefined}
+                          <Link prefetch={false} href={href(month, c.date)} aria-label={label} aria-current={c.today ? 'date' : undefined}
                             className={cn('flex h-full min-h-[3.5rem] w-full flex-col gap-1 p-1 text-left transition-colors hover:bg-brand-wash sm:min-h-[6rem] sm:p-2', isSel && 'bg-brand-wash ring-2 ring-inset ring-brand')}>
                             <span className={cn('num inline-flex h-6 min-w-[1.5rem] items-center justify-center self-start rounded-full px-1 text-[13px]', c.today ? 'bg-brand font-semibold text-white' : c.sunday ? 'text-ink-faint' : 'font-medium text-ink')}>{c.day}</span>
                             {c.holiday && (
@@ -170,7 +170,7 @@ export default async function HolidaysPage({ searchParams }: { searchParams: SP 
                   {list.length === 0 && <tr><td colSpan={2}><EmptyState title={`No holidays entered for ${year}`}>Add each public holiday as the Labour Ministry announces it. Nothing is added automatically. Select a day on the calendar to start.</EmptyState></td></tr>}
                   {list.map(h => (
                     <tr key={h.date} className={cn(h.date === selected && 'bg-brand-wash/60')}>
-                      <Td className="num whitespace-nowrap"><Link href={href(monthOf(h.date), h.date)} className="font-medium text-brand-deep underline underline-offset-2 hover:text-brand">{h.date.slice(8)} {SHORT_MONTHS[Number(h.date.slice(5, 7)) - 1]}</Link></Td>
+                      <Td className="num whitespace-nowrap"><Link prefetch={false} href={href(monthOf(h.date), h.date)} className="font-medium text-brand-deep underline underline-offset-2 hover:text-brand">{h.date.slice(8)} {SHORT_MONTHS[Number(h.date.slice(5, 7)) - 1]}</Link></Td>
                       <Td>{h.name}{h.nameKh && <span className="ml-2 text-ink-soft">{h.nameKh}</span>}</Td>
                     </tr>
                   ))}

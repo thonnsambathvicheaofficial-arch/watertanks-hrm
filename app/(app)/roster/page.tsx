@@ -100,7 +100,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
             {rows.map(r => (
               <tr key={r.pin} className="group">
                 <th scope="row" className="sticky left-0 z-10 border-b border-r border-line bg-raised px-3 py-1.5 text-left font-normal group-hover:bg-brand-wash">
-                  <Link href={`/staff/${encodeURIComponent(r.pin)}`} className="font-medium text-ink hover:underline">{r.name}</Link>
+                  <Link prefetch={false} href={`/staff/${encodeURIComponent(r.pin)}`} className="font-medium text-ink hover:underline">{r.name}</Link>
                   <span className="num ml-2 text-[12px] text-ink-faint">{r.pin}</span>
                 </th>
                 {days.map(d => {
@@ -112,7 +112,7 @@ export default async function RosterPage({ searchParams }: { searchParams: SP })
                   return (
                     <td key={d.d} id={`c-${r.pin}-${d.date}`} className="scroll-ml-64 scroll-mt-32 border-b border-line p-[2px]">
                       {me.perms.includes('attendance.edit') ? (
-                        <Link data-dense href={withReturn(`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`, here)} title={tip} aria-label={tip}
+                        <Link prefetch={false} data-dense href={withReturn(`/roster/day?pin=${encodeURIComponent(r.pin)}&date=${d.date}&month=${month}`, here)} title={tip} aria-label={tip}
                           className={cn('num relative flex h-7 items-center justify-center rounded-sm text-[12px] font-medium transition-[filter] hover:brightness-95', s.cls, c.overridden && 'ring-1 ring-inset ring-ink/35')}>
                         {label}
                       </Link>

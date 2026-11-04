@@ -86,7 +86,7 @@ export default async function PayrollMonthPage({ params, searchParams }: { param
             <tbody>
               {slips.map(s => (
                 <tr key={s.id}>
-                  <Td className="font-medium"><Link href={`/payroll/slip/${s.id}`} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{s.name}</Link><span className="num ml-2 text-[12px] font-normal text-ink-soft">{s.pin}</span>
+                  <Td className="font-medium"><Link prefetch={false} href={`/payroll/slip/${s.id}`} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{s.name}</Link><span className="num ml-2 text-[12px] font-normal text-ink-soft">{s.pin}</span>
                     {s.calc.incomplete && <span className="ml-2 inline-flex items-center rounded-sm bg-late-wash px-1.5 py-0.5 text-[11px] font-medium text-late">Incomplete</span>}
                     {s.calc.notes.length > 0 && <div className="mt-0.5 max-w-[320px] text-[12px] font-normal text-ink-soft">{s.calc.notes[0]}</div>}
                   </Td>

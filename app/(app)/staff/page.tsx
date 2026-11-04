@@ -58,7 +58,7 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
               <tr key={e.pin}>
                 <Td className="num text-ink-soft">{e.pin}</Td>
                 {ext && <Td className="num whitespace-nowrap text-ink-soft">{e.staffCode}</Td>}
-                <Td className="font-medium"><Link href={withReturn(`/staff/${encodeURIComponent(e.pin)}`, here)} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{e.name || 'Unnamed'}</Link>{e.nameKh && <div lang="km" className="text-[13px] font-normal text-ink-soft">{e.nameKh}</div>}</Td>
+                <Td className="font-medium"><Link prefetch={false} href={withReturn(`/staff/${encodeURIComponent(e.pin)}`, here)} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{e.name || 'Unnamed'}</Link>{e.nameKh && <div lang="km" className="text-[13px] font-normal text-ink-soft">{e.nameKh}</div>}</Td>
                 <Td className="text-ink-soft">{glabel(e.group)}</Td>
                 {ready && <Td className="text-ink-soft">{deptName[e.departmentId] || ''}</Td>}
                 {ready && <Td className="text-ink-soft"><span lang="km">{e.position}</span></Td>}
