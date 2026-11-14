@@ -31,7 +31,7 @@ export default async function StaffMemberPage({ params, searchParams }: { params
   const ret = safeReturn(searchParams.return)
   const pin = decodeURIComponent(params.pin)
   const ready = await hr.available()
-  const ext = await hr.extended()
+  const [ext, photos, idCardsReady, idOriginals] = await Promise.all([hr.extended(), hr.photos(), hr.idCards(), hr.idOriginals()])
   // Discipline history, for people allowed to see it (it is sensitive: its own permission).
   const showDiscipline = me.perms.includes('discipline.view') && (await disc.records.ready())
   const discRecords: { id: string; occurredOn: string; kind: string; reason: string; deduction: number | null; status: string }[] = showDiscipline ? await disc.records.list({ pin }) : []
@@ -44,6 +44,11 @@ export default async function StaffMemberPage({ params, searchParams }: { params
     ext ? hr.staff.list() : [],
   ])
   if (!profile) notFound()
+  // The ID card is more sensitive than a profile photo: only people who can edit staff see it, through a 10-minute link.
+  const showIdCard = idCardsReady && me.perms.includes('staff.edit')
+  const idCardUrl: string = showIdCard && profile.idCardPath ? await hr.staff.idCardUrl(profile.idCardPath) : ''
+  const idCardOriginalUrl: string = showIdCard && idOriginals && profile.idCardOriginalPath ? await hr.staff.idCardUrl(profile.idCardOriginalPath) : ''
+  const photoUrl: string = photos && profile.photoPath ? ((await hr.staff.photoUrls([profile.photoPath]))[profile.photoPath] || '') : ''
   const echo = decodeEcho(searchParams.v)
   const fallback = echo && echo.name !== undefined ? profileFromEcho(echo, profile) : null
   const ev = (k: string) => echoOne(echo, k)
@@ -55,7 +60,7 @@ export default async function StaffMemberPage({ params, searchParams }: { params
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
       {!me.perms.includes('staff.edit') && <ReadOnlyNotice />}
-      <StaffForm profile={profile} fallback={fallback} shifts={shifts as Shift[]} departments={departments} managers={(everyone as { pin: string; name: string }[]).map(p => ({ pin: p.pin, name: p.name }))} ready={ready} ext={ext} action={updateStaff} />
+      <StaffForm profile={profile} fallback={fallback} shifts={shifts as Shift[]} departments={departments} managers={(everyone as { pin: string; name: string }[]).map(p => ({ pin: p.pin, name: p.name }))} ready={ready} ext={ext} photos={photos} photoUrl={photoUrl} idCards={showIdCard} idCardUrl={idCardUrl} idOriginals={idOriginals} idCardOriginalUrl={idCardOriginalUrl} action={updateStaff} />
 
       {ready && (
         <section className="mt-12 max-w-[820px] border-t border-line pt-6" aria-labelledby="rot-h">

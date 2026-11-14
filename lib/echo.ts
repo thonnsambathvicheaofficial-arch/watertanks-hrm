@@ -6,7 +6,9 @@ export function encodeEcho(f: FormData): string {
   const o: Echo = {}
   for (const k of new Set(Array.from(f.keys()))) {
     if (k.startsWith('$ACTION')) continue
-    const v = f.getAll(k).map(String)
+    // An uploaded file cannot travel in a web address (and would read back as "[object File]"): leave it out.
+    const v = f.getAll(k).filter(x => typeof x === 'string').map(String)
+    if (!v.length) continue
     o[k] = v.length > 1 ? v : v[0]
   }
   return Buffer.from(JSON.stringify(o)).toString('base64url')

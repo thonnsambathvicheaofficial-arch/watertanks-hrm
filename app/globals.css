@@ -88,3 +88,9 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* A form field filled in from an ID card photo: amber until someone confirms it by eye, calm green when a check digit proved it. */
+@layer components {
+  [data-id='check'] { border-color: oklch(var(--late) / 0.7); background-color: oklch(var(--late-wash)); }
+  [data-id='ok'] { border-color: oklch(var(--present) / 0.6); }
+}

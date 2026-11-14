@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, ScanLine } from 'lucide-react'
 import { Table, TableWrap, Td, Th } from '@/components/Table'
+import { Avatar } from '@/components/Avatar'
 import { Button, EmptyState, Flash, Input, PageHeader } from '@/components/ui'
 import { DepartmentSelect, GroupSelect, cleanDepartment, inDepartment } from '@/components/StaffFilters'
 import { DAY_NAMES, to12h } from '@/lib/utils'
@@ -17,13 +18,13 @@ const { glabel } = require('@/lib/exports')
 export const metadata: Metadata = { title: 'Staff' }
 export const dynamic = 'force-dynamic'
 
-type P = { pin: string; name: string; group: string; timeIn: string; timeOut: string; offDays: number[]; aliases: string[]; departmentId: string; shiftId: string; position: string; staffCode?: string; nameKh?: string }
+type P = { pin: string; name: string; group: string; timeIn: string; timeOut: string; offDays: number[]; aliases: string[]; departmentId: string; shiftId: string; position: string; staffCode?: string; nameKh?: string; photoPath?: string }
 type Opt = { id: string; name: string }
 
 export default async function StaffPage({ searchParams }: { searchParams: { q?: string; group?: string; department?: string; error?: string; saved?: string } }) {
   const me = await guard()
   const ready = await hr.available()
-  const ext = await hr.extended()
+  const [ext, photos, idCards] = await Promise.all([hr.extended(), hr.photos(), hr.idCards()])
   const [all, shifts, depts]: [P[], Opt[], Opt[]] = await Promise.all([hr.staff.list(), ready ? hr.shifts.list() : [], ready ? hr.departments.list() : []])
   const shiftName = Object.fromEntries(shifts.map(s => [s.id, s.name]))
   const deptName = Object.fromEntries(depts.map(d => [d.id, d.name]))
@@ -34,11 +35,14 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
   const rows = all
     .filter(e => (!group || e.group === group) && inDepartment(department, e.departmentId) && matchesSearch(q, e))
     .sort((a, b) => (a.name || a.pin).localeCompare(b.name || b.pin))
+  // One call signs every visible photo; the pictures then load straight from storage, not through this site.
+  const photoUrl: Record<string, string> = photos ? await hr.staff.photoUrls(rows.map(e => e.photoPath)) : {}
 
   return (
     <>
       <PageHeader title="Staff" note={`${rows.length} of ${all.length} on record`}>
         {me.perms.includes('staff.edit') && <Link href="/staff/suggestions" className="text-[14px] text-ink-soft underline decoration-line-strong hover:text-ink">Unlisted PINs</Link>}
+        {me.perms.includes('staff.edit') && idCards && ext && <Link href="/staff/new?from=id" className="inline-flex h-9 items-center gap-2 rounded border border-line-strong bg-raised px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-brand-wash"><ScanLine size={16} aria-hidden /> Add staff from ID</Link>}
         {me.perms.includes('staff.edit') && <Link href="/staff/new" className="inline-flex h-9 items-center gap-2 rounded bg-brand px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-brand-deep"><Plus size={16} aria-hidden /> Add staff</Link>}
       </PageHeader>
       <Flash error={searchParams.error} saved={searchParams.saved} />
@@ -51,11 +55,12 @@ export default async function StaffPage({ searchParams }: { searchParams: { q?: 
       </form>
       <TableWrap>
         <Table>
-          <thead><tr><Th>PIN</Th>{ext && <Th>Staff ID</Th>}<Th>Name</Th><Th>Group</Th>{ready && <Th>Department</Th>}{ready && <Th>Position</Th>}<Th>{ready ? 'Shift' : 'Hours'}</Th><Th>Off days</Th><Th>Also scans as</Th></tr></thead>
+          <thead><tr>{photos && <Th><span className="sr-only">Photo</span></Th>}<Th>PIN</Th>{ext && <Th>Staff ID</Th>}<Th>Name</Th><Th>Group</Th>{ready && <Th>Department</Th>}{ready && <Th>Position</Th>}<Th>{ready ? 'Shift' : 'Hours'}</Th><Th>Off days</Th><Th>Also scans as</Th></tr></thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={9}><EmptyState title="No staff match" /></td></tr>}
+            {rows.length === 0 && <tr><td colSpan={10}><EmptyState title="No staff match" /></td></tr>}
             {rows.map(e => (
               <tr key={e.pin}>
+                {photos && <Td className="!py-2"><Avatar name={e.name || e.pin} url={e.photoPath ? photoUrl[e.photoPath] : ''} size={36} /></Td>}
                 <Td className="num text-ink-soft">{e.pin}</Td>
                 {ext && <Td className="num whitespace-nowrap text-ink-soft">{e.staffCode}</Td>}
                 <Td className="font-medium"><Link prefetch={false} href={withReturn(`/staff/${encodeURIComponent(e.pin)}`, here)} className="text-brand-deep underline decoration-line-strong hover:decoration-brand">{e.name || 'Unnamed'}</Link>{e.nameKh && <div lang="km" className="text-[13px] font-normal text-ink-soft">{e.nameKh}</div>}</Td>

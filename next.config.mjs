@@ -13,6 +13,9 @@ const nextConfig = {
     // Excel files are uploaded to the import page through a server action (4 MB is enforced in lib/import.js).
     serverActions: { bodySizeLimit: '5mb' },
   },
+  // pdf.js (used in the browser to open scanned ID card PDFs) has an optional Node-only branch that asks for the "canvas" package.
+  // It is never used in the browser, so it is declared absent instead of failing the build.
+  webpack: (config) => { config.resolve.alias = { ...config.resolve.alias, canvas: false }; return config },
   compress: true,
   poweredByHeader: false,
 }

@@ -1,4 +1,7 @@
 import { Button, Field, Input, Select, WeekdayChecks } from '@/components/ui'
+import { IdCardField } from '@/components/IdCardField'
+import { IdCardReader } from '@/components/IdCardReader'
+import { PhotoField } from '@/components/PhotoField'
 import { to12h } from '@/lib/utils'
 
 export type Profile = {
@@ -7,6 +10,8 @@ export type Profile = {
   // Fuller profile (migration 005). Empty strings when not recorded.
   staffCode: string; nameKh: string; gender: string; dateOfBirth: string; maritalStatus: string; idCardNo: string; nssfNo: string; address: string
   personalEmail: string; emergencyContact: string; emergencyPhone: string; employmentType: string; probationEnd: string; lineManager: string; resignReason: string
+  // Profile photo (migration 010): the file's name in private storage; empty when none.
+  photoPath: string
 }
 type Opt = { id: string; name: string }
 type ShiftOpt = Opt & { start: string; end: string }
@@ -15,7 +20,7 @@ type Manager = { pin: string; name: string }
 export const blankProfile = (over: Partial<Profile> = {}): Profile => ({
   pin: '', name: '', group: '', timeIn: '', timeOut: '', offDays: [], aliases: [], departmentId: '', shiftId: '', position: '', phone: '', joiningDate: '', resignedDate: '',
   staffCode: '', nameKh: '', gender: '', dateOfBirth: '', maritalStatus: '', idCardNo: '', nssfNo: '', address: '', personalEmail: '', emergencyContact: '', emergencyPhone: '',
-  employmentType: '', probationEnd: '', lineManager: '', resignReason: '', ...over,
+  employmentType: '', probationEnd: '', lineManager: '', resignReason: '', photoPath: '', ...over,
 })
 
 const MARITAL = ['Single', 'Married', 'Divorced', 'Widowed']
@@ -23,16 +28,26 @@ const MARITAL = ['Single', 'Married', 'Divorced', 'Widowed']
 // Shared by "add staff" and "edit staff". The department, shift and employment fields appear once
 // migration 001 has been run (`ready`), and the fuller profile once migration 005 has (`ext`).
 // Before that it edits what the legacy staff page did.
-export function StaffForm({ profile, fallback, shifts, departments, managers = [], ready, ext = false, action }: {
-  profile: Profile | null; fallback?: Profile | null; shifts: ShiftOpt[]; departments: Opt[]; managers?: Manager[]; ready: boolean; ext?: boolean; action: (f: FormData) => Promise<void>
+export function StaffForm({ profile, fallback, shifts, departments, managers = [], ready, ext = false, photos = false, photoUrl = '', idReader = false, idCards = false, idCardUrl = '', idOriginals = false, idCardOriginalUrl = '', action }: {
+  profile: Profile | null; fallback?: Profile | null; shifts: ShiftOpt[]; departments: Opt[]; managers?: Manager[]; ready: boolean; ext?: boolean
+  // photos: migration 010 has been run, so the photo field is offered. photoUrl: a short-lived link to the saved photo, if any.
+  photos?: boolean; photoUrl?: string
+  // idReader: show "read the ID card" at the top (Add staff from ID). idCards: migration 011 is run and this person may see ID cards,
+  // so an existing record shows its card picture. idCardUrl: a short-lived link to it.
+  idReader?: boolean; idCards?: boolean; idCardUrl?: string
+  // idOriginals: migration 012 is run, so a PDF is kept as well as the cut-out card. idCardOriginalUrl: a short-lived link to the saved PDF.
+  idOriginals?: boolean; idCardOriginalUrl?: string
+  action: (f: FormData) => Promise<void>
 }) {
   const isNew = !profile
   // Values to show in the fields: the saved record, or what was typed before a rejected save.
   const f = fallback ?? profile
   return (
     <form action={action} className="max-w-[760px] space-y-10">
+      {idReader && <IdCardReader keepOriginal={idOriginals} />}
       <section className="space-y-5" aria-labelledby="id-h">
         <h2 id="id-h" className="text-[15px] font-semibold">Identity</h2>
+        {photos && <PhotoField name={f?.name || ''} currentUrl={photoUrl} />}
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="PIN" hint={isNew ? 'The ID the fingerprint reader uses. It cannot be changed here later.' : 'The fingerprint ID. Use Change PIN below to correct it.'}>
             {isNew
@@ -62,6 +77,13 @@ export function StaffForm({ profile, fallback, shifts, departments, managers = [
         </div>
         {ext && <Field label="Current address"><Input name="address" defaultValue={f?.address} lang="km" /></Field>}
       </section>
+
+      {idCards && !isNew && (
+        <section className="space-y-3 border-t border-line pt-6" aria-labelledby="idc-h">
+          <h2 id="idc-h" className="text-[15px] font-semibold">National ID card</h2>
+          <IdCardField currentUrl={idCardUrl} originalUrl={idCardOriginalUrl} keepOriginal={idOriginals} knownIdNo={f?.idCardNo || ''} />
+        </section>
+      )}
 
       <section className="space-y-5 border-t border-line pt-6" aria-labelledby="emp-h">
         <h2 id="emp-h" className="text-[15px] font-semibold">Employment</h2>
