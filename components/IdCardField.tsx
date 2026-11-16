@@ -69,7 +69,7 @@ export function IdCardField({ currentUrl, originalUrl, keepOriginal = false, kno
         <label className={`inline-flex h-9 cursor-pointer items-center gap-2 rounded border border-line-strong bg-raised px-3.5 text-[13px] font-medium text-ink transition-colors focus-within:border-brand hover:bg-brand-wash ${reading ? 'pointer-events-none opacity-60' : ''}`}>
           <ScanLine size={16} aria-hidden />
           {currentUrl ? 'Replace ID card' : 'Upload ID card'}
-          <input ref={pick} type="file" accept="image/*,application/pdf,.pdf" onChange={onChoose} disabled={reading} className="sr-only" />
+          <input ref={pick} type="file" accept="image/*,application/pdf,.pdf,.heic,.heif" onChange={onChoose} disabled={reading} className="sr-only" />
         </label>
         {currentUrl && state.kind !== 'ready' && (
           <ConfirmButton variant="danger" formAction={removeIdCardAction} message="Remove this ID card from the staff record? The saved picture will be deleted." pendingLabel="Removing">Remove ID card</ConfirmButton>
@@ -78,7 +78,7 @@ export function IdCardField({ currentUrl, originalUrl, keepOriginal = false, kno
       <input ref={post} type="file" name="idCard" tabIndex={-1} aria-hidden className="sr-only" />
       <input ref={postOriginal} type="file" name="idCardOriginal" tabIndex={-1} aria-hidden className="sr-only" />
 
-      {state.kind === 'idle' && <p className="text-[12px] text-ink-soft">A photo or a scanned PDF of the front of the ID card. A PDF is kept as it is too, next to the cut-out card. Kept privately: only people who can edit staff can open them.</p>}
+      {state.kind === 'idle' && <p className="text-[12px] text-ink-soft">A photo (JPG, PNG or iPhone HEIC) or a scanned PDF of the front of the ID card. A PDF is kept as it is too, next to the cut-out card. Kept privately: only people who can edit staff can open them.</p>}
 
       {reading && (
         <div role="status" aria-live="polite">

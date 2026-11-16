@@ -97,7 +97,7 @@ export function IdCardReader({ keepOriginal = false }: { keepOriginal?: boolean 
         <label className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-brand px-4 text-[14px] font-medium text-white transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand hover:bg-brand-deep ${reading ? 'pointer-events-none opacity-60' : ''}`}>
           <ScanLine size={18} aria-hidden />
           {state.kind === 'done' ? 'Read another card' : 'Choose ID card photo or PDF'}
-          <input ref={pick} type="file" accept="image/*,application/pdf,.pdf" onChange={onChoose} disabled={reading} className="sr-only" />
+          <input ref={pick} type="file" accept="image/*,application/pdf,.pdf,.heic,.heif" onChange={onChoose} disabled={reading} className="sr-only" />
         </label>
         <p className="max-w-[46ch] text-[13px] text-ink-soft">
           A photo or a scanned PDF showing the <strong className="font-medium text-ink">front</strong> of the Cambodian national ID card, clear and flat, no glare. A scan with the back of the card beside it is fine. It is read on this computer and nothing is saved until you press Add staff member.

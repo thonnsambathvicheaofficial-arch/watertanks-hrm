@@ -8,6 +8,7 @@
 // (the one with the "KHM" lines marks the front). The photo of a card that fills the frame skips the finding and is read whole.
 import { bestMrz, cardFields, parseFront, printedNames, snapMrz, type CardFields, type Front, type Mrz } from '@/lib/id-card'
 import { findCards, type Rect } from '@/lib/card-find'
+import { looksHeic, toJpegIfHeic } from '@/lib/heic'
 
 export type ReadResult = {
   fields: CardFields; mrz: Mrz | null; front: Front | null
@@ -159,7 +160,10 @@ async function locateMrz(w: Worker, img: HTMLCanvasElement): Promise<Band | null
 }
 
 /** Read an ID card from a photo or a PDF. Throws a plain-language Error when the file cannot be opened or holds no card. */
-export async function readCard(file: File, step: Step): Promise<ReadResult> {
+export async function readCard(input: File, step: Step): Promise<ReadResult> {
+  // A HEIC picture (iPhone) becomes a JPEG first; everything below only sees pictures the browser can open.
+  if (looksHeic(input)) step('Converting the HEIC picture', 0.01)
+  const file = await toJpegIfHeic(input)
   step(isPdf(file) ? 'Opening the PDF' : 'Opening the picture', 0.02)
   let pages: HTMLCanvasElement[]
   try { pages = isPdf(file) ? await loadPdf(file, step) : [await loadImage(file)] } catch (e) {
