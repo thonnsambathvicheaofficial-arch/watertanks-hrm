@@ -10,7 +10,9 @@ import { removeOverride, saveOverride } from './actions'
 import { guard } from '@/lib/guard'
 import { safeReturn } from '@/lib/return-to'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { reportData } = require('@/lib/report-data')
+const { reportData, shiftDate } = require('@/lib/report-data')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { dayScans } = require('@/lib/day-scans')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const store = require('@/lib/store')
 
@@ -34,17 +36,18 @@ export default async function DayPage({ searchParams }: { searchParams: { pin?: 
   const month = searchParams.month || date.slice(0, 7)
 
   const [computed, current, devices, ovs] = await Promise.all([
-    reportData({ from: date, to: date, pin, skipOverrides: true }),
+    // The day either side comes too: a night shift's OUT after midnight is stamped with the next date but belongs to this day.
+    reportData({ from: shiftDate(date, -1), to: shiftDate(date, 1), pin, skipOverrides: true, withAround: true }),
     reportData({ from: date, to: date, pin }),
     store.devices.list(),
     store.overrides.query({ from: date, to: date, pin }),
   ])
-  const base: Row | undefined = computed.daily[0]
+  const base: Row | undefined = computed.daily.find((r: Row) => r.date === date)
   const now: Row | undefined = current.daily[0]
   if (!base || !now) notFound()
   const ov: Ov | undefined = ovs[0]
   const deviceName: Record<string, string> = Object.fromEntries(devices.map((d: { id: string; name: string }) => [d.id, d.name]))
-  const punches: { id: string; time: string; deviceId: string }[] = [...computed.punches].sort((a, b) => (a.time < b.time ? -1 : 1))
+  const { mine: punches, elsewhere }: { mine: { id: string; time: string; deviceId: string; onDate: boolean }[]; elsewhere: { id: string; time: string; deviceId: string; belongsTo: string }[] } = dayScans(computed.around || [], computed.daily, date)
   const ret = safeReturn(searchParams.return)
   const echo = decodeEcho(searchParams.v)
   const val = (k: string, fb: string | null | undefined) => echoOne(echo, k) ?? fb ?? ''
@@ -72,10 +75,15 @@ export default async function DayPage({ searchParams }: { searchParams: { pin?: 
                 <thead><tr><Th>Scan time</Th><Th>Device</Th></tr></thead>
                 <tbody>
                   {punches.length === 0 && <tr><td colSpan={2}><EmptyState title="No scans on this day" /></td></tr>}
-                  {punches.map(p => <tr key={p.id}><Td className="num font-medium">{to12h(p.time.slice(11, 16))}<span className="ml-2 text-[12px] font-normal text-ink-faint">{p.time.slice(11, 19)}</span></Td><Td className="text-ink-soft">{deviceName[p.deviceId] || ''}</Td></tr>)}
+                  {punches.map(p => <tr key={p.id}><Td className="num font-medium">{to12h(p.time.slice(11, 16))}<span className="ml-2 text-[12px] font-normal text-ink-faint">{p.time.slice(11, 19)}</span>{!p.onDate && <span className="ml-2 text-[12px] font-normal text-ink-soft">{p.time.slice(0, 10) > date ? 'next day, ' : 'day before, '}{dayName(p.time.slice(0, 10))} {p.time.slice(5, 10)}</span>}</Td><Td className="text-ink-soft">{deviceName[p.deviceId] || ''}</Td></tr>)}
                 </tbody>
               </Table>
             </TableWrap>
+            {elsewhere.length > 0 && (
+              <p className="mt-2 text-[13px] text-ink-soft">
+                Also stamped {dayName(date)} {date}, but filed with another day&apos;s shift: {elsewhere.map((p, i) => <span key={p.id}>{i > 0 && ', '}<span className="num">{to12h(p.time.slice(11, 16))}</span> (shift of {dayName(p.belongsTo)} {p.belongsTo})</span>)}.
+              </p>
+            )}
           </section>
 
           {ov && (
